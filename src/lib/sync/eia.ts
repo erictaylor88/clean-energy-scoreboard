@@ -24,21 +24,29 @@ type EiaRow = {
 }
 
 async function fetchEiaPage(apiKey: string, offset: number, length: number) {
-  const url = new URL(EIA_BASE)
-  url.searchParams.set('api_key', apiKey)
-  url.searchParams.set('frequency', 'annual')
-  url.searchParams.set('data[0]', 'generation')
-  // All sectors combined
-  url.searchParams.set('facets[sectorDescription][]', 'all sectors')
-  url.searchParams.set('start', '2000')
-  url.searchParams.set('sort[0][column]', 'period')
-  url.searchParams.set('sort[0][direction]', 'asc')
-  url.searchParams.set('offset', String(offset))
-  url.searchParams.set('length', String(length))
+  // Build URL manually — EIA requires unencoded brackets
+  const params = [
+    `api_key=${apiKey}`,
+    `frequency=annual`,
+    `data[0]=generation`,
+    `facets[sectorDescription][]=all%20sectors`,
+    `start=2000`,
+    `sort[0][column]=period`,
+    `sort[0][direction]=asc`,
+    `offset=${offset}`,
+    `length=${length}`,
+  ].join('&')
 
-  const res = await fetch(url.toString(), { next: { revalidate: 0 } })
-  if (!res.ok) throw new Error(`EIA API error: ${res.status} ${res.statusText}`)
+  const url = `${EIA_BASE}?${params}`
+  const res = await fetch(url, { next: { revalidate: 0 } })
+  if (!res.ok) {
+    const text = await res.text().catch(() => '')
+    throw new Error(`EIA API error: ${res.status} ${res.statusText} — ${text.slice(0, 200)}`)
+  }
   const json = await res.json()
+  if (!json.response?.data || !Array.isArray(json.response.data)) {
+    throw new Error(`Unexpected EIA response structure: ${JSON.stringify(json).slice(0, 300)}`)
+  }
   return json.response as { data: EiaRow[]; total: number }
 }
 
