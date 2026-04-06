@@ -24,7 +24,7 @@ export async function GET() {
       results.ember = { ok: false, detail: 'EMBER_API_KEY not set' }
     } else {
       const res = await fetch(
-        `https://api.ember-climate.org/v1/electricity-generation/yearly.json?api_key=${key}&entity=World&date=2023&_size=1&_shape=array`
+        `https://api.ember-climate.org/ember/generation_annual.json?api_key=${key}&entity=World&date=2023&_size=1&_shape=array`
       )
       results.ember = res.ok
         ? { ok: true, detail: `Status ${res.status}` }
@@ -40,9 +40,14 @@ export async function GET() {
     if (!key) {
       results.eia = { ok: false, detail: 'EIA_API_KEY not set' }
     } else {
-      const res = await fetch(
-        `https://api.eia.gov/v2/electricity/electric-power-operational-data/data/?api_key=${key}&frequency=annual&data[0]=generation&start=2023&end=2023&facets[stateDescription][]=US&length=1`
-      )
+      const url = new URL('https://api.eia.gov/v2/electricity/electric-power-operational-data/data/')
+      url.searchParams.set('api_key', key)
+      url.searchParams.set('frequency', 'annual')
+      url.searchParams.set('data[0]', 'generation')
+      url.searchParams.set('start', '2023')
+      url.searchParams.set('end', '2023')
+      url.searchParams.set('length', '1')
+      const res = await fetch(url.toString())
       results.eia = res.ok
         ? { ok: true, detail: `Status ${res.status}` }
         : { ok: false, detail: `Status ${res.status}: ${res.statusText}` }
