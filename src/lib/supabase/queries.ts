@@ -485,3 +485,83 @@ export async function getAllStateSlugs() {
     .select('slug')
   return data || []
 }
+
+// Get energy security stats for homepage section
+export async function getEnergySecurityStats() {
+  const supabase = createReadClient()
+
+  const { data: world } = await supabase
+    .from('countries')
+    .select('id')
+    .eq('code', 'WLD')
+    .single()
+
+  if (!world) return null
+
+  // Get world data for recent years (for coal trend + carbon intensity + diversification)
+  const { data: worldTrend } = await supabase
+    .from('generation_yearly')
+    .select('year, coal_generation, gas_generation, oil_generation, solar_generation, wind_generation, hydro_generation, nuclear_generation, bioenergy_generation, other_renewables_generation, total_generation, fossil_share, carbon_intensity_gco2_kwh')
+    .eq('country_id', world.id)
+    .gte('year', 2000)
+    .order('year', { ascending: true })
+
+  if (!worldTrend || worldTrend.length === 0) return null
+
+  const latest = worldTrend[worldTrend.length - 1]
+  const previous = worldTrend.length > 1 ? worldTrend[worldTrend.length - 2] : null
+  const fiveYearsAgo = worldTrend.find(d => d.year === latest.year - 5)
+
+  // Coal share of total
+  const coalShare = latest.total_generation && latest.total_generation > 0
+    ? ((latest.coal_generation ?? 0) / latest.total_generation) * 100
+    : 0
+  const coalSharePrev = previous && previous.total_generation && previous.total_generation > 0
+    ? ((previous.coal_generation ?? 0) / previous.total_generation) * 100
+    : 0
+  const coalMomentum = coalShare - coalSharePrev
+
+  // Peak coal share
+  let peakCoal = { year: 2000, share: 0 }
+  for (const d of worldTrend) {
+    if (d.total_generation && d.total_generation > 0) {
+      const cs = ((d.coal_generation ?? 0) / d.total_generation) * 100
+      if (cs > peakCoal.share) {
+        peakCoal = { year: d.year, share: cs }
+      }
+    }
+  }
+
+  // Carbon intensity
+  const carbonIntensity = latest.carbon_intensity_gco2_kwh ?? 0
+  const carbonIntensityPrev = previous?.carbon_intensity_gco2_kwh ?? 0
+  const carbonMomentum = carbonIntensity - carbonIntensityPrev
+  const carbonIntensity5YAgo = fiveYearsAgo?.carbon_intensity_gco2_kwh ?? 0
+  const carbon5YearChange = carbonIntensity5YAgo > 0
+    ? ((carbonIntensity - carbonIntensity5YAgo) / carbonIntensity5YAgo) * 100
+    : 0
+
+  // Source diversification: how many clean sources contribute >5% of total
+  const total = latest.total_generation ?? 1
+  const sources = [
+    { name: 'Solar', share: ((latest.solar_generation ?? 0) / total) * 100 },
+    { name: 'Wind', share: ((latest.wind_generation ?? 0) / total) * 100 },
+    { name: 'Hydro', share: ((latest.hydro_generation ?? 0) / total) * 100 },
+    { name: 'Nuclear', share: ((latest.nuclear_generation ?? 0) / total) * 100 },
+    { name: 'Bioenergy', share: ((latest.bioenergy_generation ?? 0) / total) * 100 },
+    { name: 'Other Renewables', share: ((latest.other_renewables_generation ?? 0) / total) * 100 },
+  ]
+  const significantSources = sources.filter(s => s.share >= 2).sort((a, b) => b.share - a.share)
+
+  return {
+    dataYear: latest.year,
+    coalShare,
+    coalMomentum,
+    peakCoal,
+    carbonIntensity: Math.round(carbonIntensity),
+    carbonMomentum: Math.round(carbonMomentum),
+    carbon5YearChange,
+    significantSources,
+    fossilShare: latest.fossil_share ?? 0,
+  }
+}
