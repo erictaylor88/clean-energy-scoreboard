@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-const EMBER_BASE = 'https://api.ember-climate.org/v1'
+const EMBER_BASE = 'https://api.ember-climate.org'
 
 type EmberRow = {
   entity: string
@@ -21,7 +21,7 @@ async function fetchEmberYearly(apiKey: string): Promise<EmberRow[]> {
   const limit = 5000
 
   while (true) {
-    const url = `${EMBER_BASE}/electricity-generation/yearly.json?api_key=${apiKey}&_shape=array&_size=${limit}&_offset=${offset}`
+    const url = `${EMBER_BASE}/ember/generation_annual.json?api_key=${apiKey}&_shape=array&_size=${limit}&_offset=${offset}`
     const res = await fetch(url, { next: { revalidate: 0 } })
 
     if (!res.ok) {
