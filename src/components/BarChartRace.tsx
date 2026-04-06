@@ -18,9 +18,9 @@ type Props = {
 
 const TOP_N = 15
 const BAR_HEIGHT = 36
-const MARGIN = { top: 40, right: 80, bottom: 10, left: 160 }
-const MOBILE_MARGIN = { top: 40, right: 60, bottom: 10, left: 110 }
-const TRANSITION_MS = 600
+const MARGIN = { top: 16, right: 80, bottom: 10, left: 160 }
+const MOBILE_MARGIN = { top: 16, right: 60, bottom: 10, left: 110 }
+const TRANSITION_MS = 450
 
 // Country code → emoji flag
 function codeToFlag(code: string) {
@@ -123,6 +123,26 @@ export default function BarChartRace({ data, years }: Props) {
     if (g.empty()) {
       g = svg.append('g').attr('class', 'chart-area')
     }
+
+    // Year watermark — large background year
+    let watermark = svg.select<SVGTextElement>('text.year-watermark')
+    if (watermark.empty()) {
+      watermark = svg.append('text')
+        .attr('class', 'year-watermark')
+        .attr('text-anchor', 'end')
+        .attr('dominant-baseline', 'auto')
+        .attr('fill', 'var(--border-default)')
+        .attr('opacity', 0.5)
+        .attr('font-family', "'Inter Variable', system-ui, sans-serif")
+        .attr('font-weight', '700')
+        .attr('font-variant-numeric', 'tabular-nums')
+        .style('pointer-events', 'none')
+    }
+    watermark
+      .attr('font-size', isMobile ? '80px' : '120px')
+      .attr('x', width - (isMobile ? 12 : 20))
+      .attr('y', height - 10)
+      .text(currentYear)
 
     // Bars
     const bars = g.selectAll<SVGRectElement, typeof topData[number]>('rect.bar')
@@ -239,10 +259,10 @@ export default function BarChartRace({ data, years }: Props) {
       }
       yearIdxRef.current = nextIdx
       setCurrentYearIdx(nextIdx)
-      timerRef.current = setTimeout(step, TRANSITION_MS + 200)
+      timerRef.current = setTimeout(step, TRANSITION_MS + 100)
     }
 
-    timerRef.current = setTimeout(step, TRANSITION_MS + 200)
+    timerRef.current = setTimeout(step, TRANSITION_MS + 100)
   }, [years.length])
 
   // Cleanup on unmount only
