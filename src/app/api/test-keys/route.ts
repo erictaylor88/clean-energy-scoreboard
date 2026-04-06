@@ -26,17 +26,22 @@ export async function GET() {
       const endpoints = [
         '/ember/generation_yearly.json',
         '/ember/generation_annual.json',
+        '/ember/yearly_full_data.json',
+        '/ember.json',
       ]
+      const tried: string[] = []
       for (const ep of endpoints) {
         const res = await fetch(
           `https://api.ember-climate.org${ep}?api_key=${key}&_size=1&_shape=array`
         )
         if (res.ok) {
           const data = await res.json()
-          results.ember = { ok: true, detail: `${ep} — ${res.status}, ${Array.isArray(data) ? data.length : 0} rows, keys: ${data[0] ? Object.keys(data[0]).slice(0, 5).join(',') : 'none'}` }
+          const keys = Array.isArray(data) && data[0] ? Object.keys(data[0]).slice(0, 8).join(', ') : 'none'
+          results.ember = { ok: true, detail: `${ep} — keys: ${keys}` }
           break
         } else {
-          results.ember = { ok: false, detail: `${ep} → ${res.status} ${res.statusText}` }
+          tried.push(`${ep}→${res.status}`)
+          results.ember = { ok: false, detail: `Tried: ${tried.join('; ')}` }
         }
       }
     }
