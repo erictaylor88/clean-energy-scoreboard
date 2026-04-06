@@ -79,8 +79,7 @@ function groupByCountryYear(rows: CsvRow[]) {
 
     // Map generation values
     if (row.generation_twh !== null && !isNaN(row.generation_twh)) {
-      if (v === 'total') rec.total_generation = row.generation_twh
-      else if (v === 'clean') rec.clean_generation = row.generation_twh
+      if (v === 'clean') rec.clean_generation = row.generation_twh
       else if (v === 'fossil') rec.fossil_generation = row.generation_twh
       else if (v === 'solar') rec.solar_generation = row.generation_twh
       else if (v === 'wind') rec.wind_generation = row.generation_twh
@@ -90,7 +89,7 @@ function groupByCountryYear(rows: CsvRow[]) {
       else if (v === 'other renewables') rec.other_renewables_generation = row.generation_twh
       else if (v === 'coal') rec.coal_generation = row.generation_twh
       else if (v === 'gas') rec.gas_generation = row.generation_twh
-      else if (v === 'oil') rec.oil_generation = row.generation_twh
+      else if (v === 'oil' || v === 'other fossil') rec.oil_generation = row.generation_twh
     }
 
     // Map share values (clean & fossil only)
@@ -99,13 +98,50 @@ function groupByCountryYear(rows: CsvRow[]) {
       else if (v === 'fossil') rec.fossil_share = row.share_of_generation_pct
     }
 
-    // Carbon intensity (from Total variable's emissions)
-    if (v === 'total' && row.emissions_mtco2 !== null && rec.total_generation) {
-      // Convert MtCO2 / TWh → gCO2/kWh:  MtCO2 / TWh * 1e6 / 1e9 * 1e3 = *1000
-      // Actually: (emissions_mtco2 * 1e6) / (generation_twh * 1e9) * 1e3 = emissions/generation
-      // Simplified: gCO2/kWh = emissions_mtco2 / generation_twh * 1e6 / 1e6 = emissions/generation * 1000
-      rec.carbon_intensity_gco2_kwh = (row.emissions_mtco2 / (rec.total_generation as number)) * 1000
+    // Emissions
+    if (row.emissions_mtco2 !== null && !isNaN(row.emissions_mtco2)) {
+      if (v === 'fossil') rec.fossil_emissions = row.emissions_mtco2
     }
+  }
+
+  // Post-process: compute total_generation and carbon intensity
+  for (const rec of grouped.values()) {
+    const clean = (rec.clean_generation as number) || 0
+    const fossil = (rec.fossil_generation as number) || 0
+    if (clean > 0 || fossil > 0) {
+      rec.total_generation = clean + fossil
+    }
+    if (rec.fossil_emissions && rec.total_generation) {
+      rec.carbon_intensity_gco2_kwh = ((rec.fossil_emissions as number) / (rec.total_generation as number)) * 1000
+    }
+  }
+
+  // Create World aggregate by summing non-aggregate countries per year
+  const yearTotals = new Map<number, Record<string, number>>()
+  for (const rec of grouped.values()) {
+    if (AGGREGATE_CODES.has(rec.entity_code as string)) continue
+    const year = rec.year as number
+    if (!yearTotals.has(year)) {
+      yearTotals.set(year, { clean: 0, fossil: 0, total: 0 })
+    }
+    const t = yearTotals.get(year)!
+    t.clean += (rec.clean_generation as number) || 0
+    t.fossil += (rec.fossil_generation as number) || 0
+    t.total += (rec.total_generation as number) || 0
+  }
+  for (const [year, t] of yearTotals) {
+    const key = `WLD__${year}`
+    grouped.set(key, {
+      entity: 'World',
+      entity_code: 'WLD',
+      year,
+      is_aggregate: true,
+      clean_generation: t.clean,
+      fossil_generation: t.fossil,
+      total_generation: t.total,
+      clean_share: t.total > 0 ? (t.clean / t.total) * 100 : null,
+      fossil_share: t.total > 0 ? (t.fossil / t.total) * 100 : null,
+    })
   }
 
   return grouped
