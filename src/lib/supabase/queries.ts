@@ -167,6 +167,49 @@ export async function getHistoricalTrend(countrySlug: string = 'world') {
   return data || []
 }
 
+// Get a single country by slug
+export async function getCountryBySlug(slug: string) {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('countries')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  return data
+}
+
+// Get all country slugs for static params
+export async function getAllCountrySlugs() {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('countries')
+    .select('slug')
+    .eq('is_aggregate', false)
+  return data || []
+}
+
+// Get latest generation data for a country
+export async function getCountryLatestData(countryId: number) {
+  const supabase = createReadClient()
+
+  const { data } = await supabase
+    .from('generation_yearly')
+    .select('*')
+    .eq('country_id', countryId)
+    .order('year', { ascending: false })
+    .limit(2)
+
+  if (!data || data.length === 0) return null
+
+  const latest = data[0]
+  const previous = data[1] || null
+  const momentum = previous
+    ? (latest.clean_share ?? 0) - (previous.clean_share ?? 0)
+    : null
+
+  return { latest, previous, momentum }
+}
+
 // Get the last successful sync timestamp
 export async function getLastSyncTime() {
   const supabase = createReadClient()

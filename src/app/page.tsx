@@ -1,11 +1,18 @@
-import { getLatestWorldData, getCountryLeaderboard, getLastSyncTime } from '@/lib/supabase/queries'
+import { getLatestWorldData, getCountryLeaderboard, getLastSyncTime, getHistoricalTrend } from '@/lib/supabase/queries'
+// TrendChart loaded via client wrapper
+import Leaderboard from '@/components/Leaderboard'
+
+import TrendChart from '@/components/TrendChartWrapper'
 
 export const revalidate = 86400
 
 export default async function Home() {
-  const worldData = await getLatestWorldData().catch(() => null)
-  const leaderboard = await getCountryLeaderboard().catch(() => [])
-  const lastSync = await getLastSyncTime().catch(() => null)
+  const [worldData, leaderboard, lastSync, trendData] = await Promise.all([
+    getLatestWorldData().catch(() => null),
+    getCountryLeaderboard().catch(() => []),
+    getLastSyncTime().catch(() => null),
+    getHistoricalTrend('world').catch(() => []),
+  ])
 
   const cleanShare = worldData?.latest?.clean_share ?? null
   const fossilShare = worldData?.latest?.fossil_share ?? null
@@ -88,60 +95,20 @@ export default async function Home() {
             Countries ranked by clean energy share of electricity generation.
           </p>
         </div>
-
-        {leaderboard.length > 0 ? (
-          <div className="border border-border-default rounded-xl overflow-hidden bg-bg-surface">
-            {leaderboard.slice(0, 20).map((country, i) => (
-              <div
-                key={country.id}
-                className="flex items-center px-4 py-3 border-b border-border-subtle last:border-b-0 hover:bg-bg-elevated transition-colors duration-150 cursor-pointer"
-              >
-                <span className="w-10 text-center font-body font-semibold tabular-nums text-text-muted text-base">
-                  {i + 1}
-                </span>
-                <span className="w-7 mx-3 text-xl">{getCountryFlag(country.code)}</span>
-                <span className="flex-1 font-body font-medium text-text-primary text-base truncate">
-                  {country.name}
-                </span>
-                <span className="w-20 text-right font-body font-semibold tabular-nums text-accent-green text-base">
-                  {country.cleanShare?.toFixed(1)}%
-                </span>
-                {country.momentum !== null && (
-                  <span
-                    className={`w-[72px] text-center text-xs font-body font-medium px-2 py-0.5 rounded-full ml-3 ${
-                      country.momentum >= 0
-                        ? 'bg-[rgba(34,197,94,0.15)] text-accent-green'
-                        : 'bg-[rgba(239,68,68,0.15)] text-accent-red'
-                    }`}
-                  >
-                    {country.momentum >= 0 ? '+' : ''}{country.momentum.toFixed(1)}
-                  </span>
-                )}
-              </div>
-            ))}
-          </div>
-        ) : (
-          <div className="border border-border-default rounded-xl bg-bg-surface p-8 text-center">
-            <p className="text-sm text-text-secondary font-body">
-              No leaderboard data yet — run the Ember sync to populate.
-            </p>
-          </div>
-        )}
+        <Leaderboard data={leaderboard} />
       </section>
 
-      {/* Trend placeholder */}
+      {/* Trend Chart */}
       <section id="trends" className="max-w-[1200px] mx-auto w-full px-4 md:px-10 pb-12">
         <div className="pt-12 pb-6 border-t border-border-subtle">
           <h2 className="font-display font-semibold text-[28px] leading-tight text-text-primary">
             How Did We Get Here?
           </h2>
           <p className="font-body text-base text-text-secondary mt-2 max-w-[50ch]">
-            Historical trend of clean vs. fossil electricity generation since 2000.
+            Global clean vs. fossil electricity share since 2000.
           </p>
         </div>
-        <div className="border border-border-default rounded-xl bg-bg-surface p-8 text-center aspect-video flex items-center justify-center">
-          <p className="text-sm text-text-secondary font-body">Trend chart — coming in Phase 2</p>
-        </div>
+        <TrendChart data={trendData} />
       </section>
 
       {/* Footer */}
@@ -161,28 +128,4 @@ export default async function Home() {
       </footer>
     </div>
   )
-}
-
-function getCountryFlag(code: string): string {
-  const alpha3to2: Record<string, string> = {
-    USA: 'US', GBR: 'GB', FRA: 'FR', DEU: 'DE', CHN: 'CN', IND: 'IN',
-    JPN: 'JP', BRA: 'BR', CAN: 'CA', AUS: 'AU', KOR: 'KR', ESP: 'ES',
-    ITA: 'IT', MEX: 'MX', IDN: 'ID', TUR: 'TR', SAU: 'SA', ARG: 'AR',
-    ZAF: 'ZA', THA: 'TH', NOR: 'NO', SWE: 'SE', DNK: 'DK', FIN: 'FI',
-    NLD: 'NL', BEL: 'BE', AUT: 'AT', CHE: 'CH', PRT: 'PT', GRC: 'GR',
-    POL: 'PL', CZE: 'CZ', ROU: 'RO', HUN: 'HU', UKR: 'UA', EGY: 'EG',
-    NGA: 'NG', KEN: 'KE', COL: 'CO', CHL: 'CL', PER: 'PE', VNM: 'VN',
-    PHL: 'PH', MYS: 'MY', SGP: 'SG', NZL: 'NZ', ISR: 'IL', ARE: 'AE',
-    PAK: 'PK', BGD: 'BD', IRN: 'IR', IRQ: 'IQ', TWN: 'TW', ISL: 'IS',
-    RUS: 'RU', KAZ: 'KZ', IRL: 'IE', LUX: 'LU', HRV: 'HR', SVK: 'SK',
-    SVN: 'SI', BGR: 'BG', SRB: 'RS', LTU: 'LT', LVA: 'LV', EST: 'EE',
-    CRI: 'CR', URY: 'UY', PRY: 'PY', ECU: 'EC', BOL: 'BO', ALB: 'AL',
-    MKD: 'MK', MNE: 'ME', BIH: 'BA', MDA: 'MD', BLR: 'BY', CYP: 'CY',
-    MLT: 'MT', GEO: 'GE', ARM: 'AM', AZE: 'AZ', MNG: 'MN', LKA: 'LK',
-    NPL: 'NP', JOR: 'JO', KWT: 'KW', QAT: 'QA', BHR: 'BH', OMN: 'OM',
-    MAR: 'MA', TUN: 'TN', DZA: 'DZ', ETH: 'ET', TZA: 'TZ', GHA: 'GH',
-    AGO: 'AO', MOZ: 'MZ', ZMB: 'ZM', ZWE: 'ZW', SEN: 'SN', CMR: 'CM',
-  }
-  const a2 = alpha3to2[code] || code.slice(0, 2)
-  return a2.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('')
 }
