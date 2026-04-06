@@ -407,6 +407,77 @@ export async function getStateHistoricalTrend(stateId: number) {
   return data || []
 }
 
+// Get shareable stat card data
+export async function getShareableStats() {
+  const supabase = createReadClient()
+
+  // Get world data
+  const { data: world } = await supabase
+    .from('countries')
+    .select('id')
+    .eq('code', 'WLD')
+    .single()
+
+  let globalClean = 0
+  let globalMomentum = 0
+  let dataYear = 2024
+
+  if (world) {
+    const { data } = await supabase
+      .from('generation_yearly')
+      .select('year, clean_share, solar_generation, wind_generation, total_generation')
+      .eq('country_id', world.id)
+      .order('year', { ascending: false })
+      .limit(2)
+
+    if (data && data.length > 0) {
+      globalClean = data[0].clean_share ?? 0
+      dataYear = data[0].year
+      if (data.length > 1) {
+        globalMomentum = (data[0].clean_share ?? 0) - (data[1].clean_share ?? 0)
+      }
+    }
+  }
+
+  // Get top country by clean share (non-aggregate, >1 TWh)
+  const leaderboard = await getCountryLeaderboard('share')
+  const topCountry = leaderboard[0] || null
+
+  // Get fastest climber (top momentum)
+  const momentumBoard = await getCountryLeaderboard('momentum')
+  const fastestClimber = momentumBoard[0] || null
+
+  // Count countries above 50%
+  const countriesAbove50 = leaderboard.filter(c => (c.cleanShare ?? 0) >= 50).length
+
+  // Solar + wind share of total (from world data)
+  let solarWindShare = 0
+  if (world) {
+    const { data } = await supabase
+      .from('generation_yearly')
+      .select('solar_generation, wind_generation, total_generation')
+      .eq('country_id', world.id)
+      .order('year', { ascending: false })
+      .limit(1)
+      .single()
+
+    if (data && data.total_generation && data.total_generation > 0) {
+      solarWindShare = ((data.solar_generation ?? 0) + (data.wind_generation ?? 0)) / data.total_generation * 100
+    }
+  }
+
+  return {
+    globalClean,
+    globalMomentum,
+    dataYear,
+    topCountry,
+    fastestClimber,
+    countriesAbove50,
+    solarWindShare,
+    totalCountries: leaderboard.length,
+  }
+}
+
 export async function getAllStateSlugs() {
   const supabase = createReadClient()
   const { data } = await supabase
