@@ -224,3 +224,56 @@ export async function getLastSyncTime() {
 
   return data?.completed_at || null
 }
+
+// Get all country clean_share data by year for bar chart race
+export async function getRaceData() {
+  const supabase = createReadClient()
+
+  const { data: countries } = await supabase
+    .from('countries')
+    .select('id, name, code, slug, is_aggregate')
+    .eq('is_aggregate', false)
+
+  if (!countries) return { countries: [], years: [], data: [] }
+
+  const countryMap = new Map(countries.map(c => [c.id, c]))
+
+  const { data: genData } = await supabase
+    .from('generation_yearly')
+    .select('country_id, year, clean_share, total_generation')
+    .gte('year', 2000)
+    .order('year', { ascending: true })
+
+  if (!genData) return { countries: [], years: [], data: [] }
+
+  // Build year→country→value map, filtering to countries with meaningful generation
+  const yearSet = new Set<number>()
+  const records: Array<{
+    year: number
+    name: string
+    code: string
+    slug: string
+    cleanShare: number
+  }> = []
+
+  for (const row of genData) {
+    const country = countryMap.get(row.country_id)
+    if (!country) continue
+    if (row.clean_share === null) continue
+    // Filter out very small countries (< 2 TWh total generation)
+    if (row.total_generation !== null && row.total_generation < 2) continue
+
+    yearSet.add(row.year)
+    records.push({
+      year: row.year,
+      name: country.name,
+      code: country.code,
+      slug: country.slug,
+      cleanShare: row.clean_share,
+    })
+  }
+
+  const years = Array.from(yearSet).sort((a, b) => a - b)
+
+  return { countries: countries.filter(c => !c.is_aggregate), years, data: records }
+}
