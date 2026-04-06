@@ -16,6 +16,11 @@ export const metadata: Metadata = {
   openGraph: {
     type: "website",
     siteName: "Clean Energy Scoreboard",
+    images: [{ url: "/api/og", width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: "summary_large_image",
+    images: ["/api/og"],
   },
 };
 

@@ -17,6 +17,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   return {
     title: `${country.name} — Clean Energy Score`,
     description: `How much of ${country.name}'s electricity comes from clean energy? See the score, trend, and generation breakdown.`,
+    openGraph: {
+      images: [{ url: `/api/og?type=country&slug=${slug}`, width: 1200, height: 630 }],
+    },
+    twitter: {
+      card: 'summary_large_image',
+      images: [`/api/og?type=country&slug=${slug}`],
+    },
   }
 }
 
