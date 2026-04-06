@@ -205,7 +205,7 @@ export default async function SharePage() {
                 {yearTo50.projectedYear - stats.dataYear} years from now at current pace
               </p>
               <p className="text-xs font-body mt-4" style={{ color: 'var(--text-muted)' }}>
-                Based on 5-year linear trend (R² = {yearTo50.r2.toFixed(2)})
+                Based on 5-year linear trend (R² = {yearTo50.confidence.toFixed(2)})
               </p>
             </>
           ) : (
