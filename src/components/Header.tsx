@@ -9,6 +9,7 @@ const navLinks = [
   { href: '/states', label: 'States' },
   { href: '/#trends', label: 'Trends' },
   { href: '/race', label: 'Race' },
+  { href: '/share', label: 'Share' },
   { href: '/about', label: 'About' },
 ]
 
