@@ -89,8 +89,8 @@ function buildStateYearData(rows: EiaRow[]) {
     }
     const rec = grouped.get(key)!
 
-    // Generation is in thousand MWh → convert to TWh
-    const twh = gen / 1_000_000
+    // Generation is in thousand MWh → convert to TWh (1 TWh = 1,000 thousand MWh)
+    const twh = gen / 1_000
 
     // ALL gives total generation
     if (row.fueltypeid === 'ALL') {
