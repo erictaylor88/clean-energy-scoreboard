@@ -1,4 +1,4 @@
-import { getLatestWorldData, getCountryLeaderboard, getLastSyncTime, getHistoricalTrend } from '@/lib/supabase/queries'
+import { getLatestWorldData, getCountryLeaderboard, getLastSyncTime, getHistoricalTrend, getEnergySecurityStats } from '@/lib/supabase/queries'
 import { projectMilestones } from '@/lib/projections'
 // TrendChart loaded via client wrapper
 import Leaderboard from '@/components/Leaderboard'
@@ -9,11 +9,12 @@ import TrendChart from '@/components/TrendChartWrapper'
 export const revalidate = 86400
 
 export default async function Home() {
-  const [worldData, leaderboard, lastSync, trendData] = await Promise.all([
+  const [worldData, leaderboard, lastSync, trendData, securityStats] = await Promise.all([
     getLatestWorldData().catch(() => null),
     getCountryLeaderboard().catch(() => []),
     getLastSyncTime().catch(() => null),
     getHistoricalTrend('world').catch(() => []),
+    getEnergySecurityStats().catch(() => null),
   ])
 
   const cleanShare = worldData?.latest?.clean_share ?? null
@@ -111,6 +112,89 @@ export default async function Home() {
             </p>
           </div>
           <MilestoneCountdown projections={projections} currentYear={dataYear ?? new Date().getFullYear()} />
+        </section>
+      )}
+
+      {/* Energy Security */}
+      {securityStats && (
+        <section id="security" className="max-w-[1200px] mx-auto w-full px-4 md:px-10 pb-12">
+          <div className="pt-12 pb-6 border-t border-border-subtle">
+            <h2 className="font-display font-semibold text-[28px] leading-tight text-text-primary">
+              Energy Security
+            </h2>
+            <p className="font-body text-base text-text-secondary mt-2 max-w-[50ch]">
+              How the clean energy transition is reshaping energy independence.
+            </p>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {/* Coal Dependence */}
+            <div className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+              <p className="text-xs font-body font-medium uppercase tracking-[0.04em]" style={{ color: 'var(--text-secondary)' }}>
+                Global Coal Share
+              </p>
+              <p className="font-body font-semibold text-[32px] tabular-nums leading-none mt-2" style={{ color: 'var(--text-primary)' }}>
+                {securityStats.coalShare.toFixed(1)}
+                <span className="text-[50%]" style={{ color: 'var(--text-muted)' }}>%</span>
+              </p>
+              <p className={`text-xs font-body font-medium mt-2 ${securityStats.coalMomentum <= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                {securityStats.coalMomentum <= 0 ? '↓' : '↑'} {Math.abs(securityStats.coalMomentum).toFixed(1)}pp from {securityStats.dataYear - 1}
+              </p>
+              <p className="text-xs font-body mt-2" style={{ color: 'var(--text-muted)' }}>
+                Down from peak of {securityStats.peakCoal.share.toFixed(1)}% in {securityStats.peakCoal.year}
+              </p>
+            </div>
+
+            {/* Carbon Intensity */}
+            <div className="rounded-xl border p-5" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+              <p className="text-xs font-body font-medium uppercase tracking-[0.04em]" style={{ color: 'var(--text-secondary)' }}>
+                Carbon Intensity
+              </p>
+              <p className="font-body font-semibold text-[32px] tabular-nums leading-none mt-2" style={{ color: 'var(--text-primary)' }}>
+                {securityStats.carbonIntensity}
+                <span className="text-[50%] ml-1" style={{ color: 'var(--text-muted)' }}>gCO₂/kWh</span>
+              </p>
+              <p className={`text-xs font-body font-medium mt-2 ${securityStats.carbonMomentum <= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                {securityStats.carbonMomentum <= 0 ? '↓' : '↑'} {Math.abs(securityStats.carbonMomentum)} gCO₂/kWh from {securityStats.dataYear - 1}
+              </p>
+              <p className="text-xs font-body mt-2" style={{ color: 'var(--text-muted)' }}>
+                {securityStats.carbon5YearChange < 0 ? '↓' : '↑'} {Math.abs(securityStats.carbon5YearChange).toFixed(1)}% over 5 years
+              </p>
+            </div>
+
+            {/* Source Diversification */}
+            <div className="rounded-xl border p-5 sm:col-span-2 lg:col-span-1" style={{ background: 'var(--bg-surface)', borderColor: 'var(--border-default)' }}>
+              <p className="text-xs font-body font-medium uppercase tracking-[0.04em]" style={{ color: 'var(--text-secondary)' }}>
+                Clean Energy Mix
+              </p>
+              <p className="font-body font-semibold text-[32px] tabular-nums leading-none mt-2" style={{ color: 'var(--text-primary)' }}>
+                {securityStats.significantSources.length}
+                <span className="text-[50%] ml-1" style={{ color: 'var(--text-muted)' }}>major sources</span>
+              </p>
+              <div className="flex flex-col gap-1.5 mt-3">
+                {securityStats.significantSources.map((source) => (
+                  <div key={source.name} className="flex items-center gap-2">
+                    <div className="flex-1 h-2 rounded-full overflow-hidden" style={{ background: 'var(--bg-elevated)' }}>
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.min(source.share * 2.5, 100)}%`,
+                          background: source.name === 'Solar' ? 'var(--chart-solar)' :
+                            source.name === 'Wind' ? 'var(--chart-wind)' :
+                            source.name === 'Hydro' ? 'var(--chart-hydro)' :
+                            source.name === 'Nuclear' ? 'var(--chart-nuclear)' :
+                            source.name === 'Bioenergy' ? 'var(--chart-bioenergy)' :
+                            'var(--chart-other-renew)',
+                        }}
+                      />
+                    </div>
+                    <span className="text-xs font-body tabular-nums w-24 text-right" style={{ color: 'var(--text-muted)' }}>
+                      {source.name} {source.share.toFixed(1)}%
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
         </section>
       )}
 
