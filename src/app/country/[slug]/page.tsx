@@ -1,5 +1,4 @@
 import { notFound } from 'next/navigation'
-import Link from 'next/link'
 // TrendChart loaded via client wrapper
 import { getCountryBySlug, getCountryLatestData, getHistoricalTrend, getAllCountrySlugs, getLastSyncTime } from '@/lib/supabase/queries'
 import type { Metadata } from 'next'
@@ -68,20 +67,6 @@ export default async function CountryPage({ params }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border-default bg-[rgba(8,15,12,0.8)] backdrop-blur-[12px]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-10 h-12 flex items-center justify-between">
-          <Link href="/" className="font-display font-bold text-text-primary text-sm tracking-tight hover:text-accent-green transition-colors">
-            ← Scoreboard
-          </Link>
-          {lastSync && (
-            <span className="text-xs font-body text-text-muted">
-              Updated {new Date(lastSync).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-          )}
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-20">
         <span className="text-4xl mb-4">{flag}</span>
