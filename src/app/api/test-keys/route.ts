@@ -17,18 +17,28 @@ export async function GET() {
     results.supabase = { ok: false, detail: (e as Error).message }
   }
 
-  // Test Ember
+  // Test Ember — try multiple Datasette endpoint patterns
   try {
     const key = process.env.EMBER_API_KEY
     if (!key) {
       results.ember = { ok: false, detail: 'EMBER_API_KEY not set' }
     } else {
-      const res = await fetch(
-        `https://api.ember-climate.org/ember/generation_annual.json?api_key=${key}&entity=World&date=2023&_size=1&_shape=array`
-      )
-      results.ember = res.ok
-        ? { ok: true, detail: `Status ${res.status}` }
-        : { ok: false, detail: `Status ${res.status}: ${res.statusText}` }
+      const endpoints = [
+        '/ember/generation_yearly.json',
+        '/ember/generation_annual.json',
+      ]
+      for (const ep of endpoints) {
+        const res = await fetch(
+          `https://api.ember-climate.org${ep}?api_key=${key}&_size=1&_shape=array`
+        )
+        if (res.ok) {
+          const data = await res.json()
+          results.ember = { ok: true, detail: `${ep} — ${res.status}, ${Array.isArray(data) ? data.length : 0} rows, keys: ${data[0] ? Object.keys(data[0]).slice(0, 5).join(',') : 'none'}` }
+          break
+        } else {
+          results.ember = { ok: false, detail: `${ep} → ${res.status} ${res.statusText}` }
+        }
+      }
     }
   } catch (e) {
     results.ember = { ok: false, detail: (e as Error).message }
@@ -48,9 +58,12 @@ export async function GET() {
       url.searchParams.set('end', '2023')
       url.searchParams.set('length', '1')
       const res = await fetch(url.toString())
-      results.eia = res.ok
-        ? { ok: true, detail: `Status ${res.status}` }
-        : { ok: false, detail: `Status ${res.status}: ${res.statusText}` }
+      if (res.ok) {
+        results.eia = { ok: true, detail: `Status ${res.status}` }
+      } else {
+        const body = await res.text().catch(() => '')
+        results.eia = { ok: false, detail: `Status ${res.status}: ${body.slice(0, 200)}` }
+      }
     }
   } catch (e) {
     results.eia = { ok: false, detail: (e as Error).message }
