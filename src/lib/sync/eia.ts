@@ -17,8 +17,8 @@ const FUEL_MAP: Record<string, string> = {
 
 type EiaRow = {
   period: string
-  stateid: string
-  statedescription: string
+  location: string
+  stateDescription: string
   fueltypeid: string
   generation: string | number // thousand MWh
 }
@@ -68,8 +68,8 @@ function buildStateYearData(rows: EiaRow[]) {
   }>()
 
   for (const row of rows) {
-    // Skip US-Total and other aggregates
-    if (row.stateid === 'US' || row.stateid.length !== 2) continue
+    // Skip US-Total, regions (numeric codes), and non-2-char entries
+    if (row.location === 'US' || row.location.length !== 2 || !/^[A-Z]{2}$/.test(row.location)) continue
     // Skip if no generation value
     const gen = Number(row.generation)
     if (isNaN(gen)) continue
@@ -77,11 +77,11 @@ function buildStateYearData(rows: EiaRow[]) {
     const year = parseInt(row.period)
     if (!year) continue
 
-    const key = `${row.stateid}__${year}`
+    const key = `${row.location}__${year}`
     if (!grouped.has(key)) {
       grouped.set(key, {
-        state: row.statedescription,
-        stateAbbr: row.stateid,
+        state: row.stateDescription,
+        stateAbbr: row.location,
         year,
         total: 0, clean: 0, fossil: 0,
         solar: 0, wind: 0, hydro: 0, nuclear: 0, coal: 0, gas: 0,
