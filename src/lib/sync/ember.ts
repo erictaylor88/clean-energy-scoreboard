@@ -122,12 +122,26 @@ function groupByCountryYear(rows: CsvRow[]) {
     if (AGGREGATE_CODES.has(rec.entity_code as string)) continue
     const year = rec.year as number
     if (!yearTotals.has(year)) {
-      yearTotals.set(year, { clean: 0, fossil: 0, total: 0 })
+      yearTotals.set(year, {
+        clean: 0, fossil: 0, total: 0,
+        solar: 0, wind: 0, hydro: 0, nuclear: 0, bioenergy: 0, other_renewables: 0,
+        coal: 0, gas: 0, oil: 0, fossil_emissions: 0,
+      })
     }
     const t = yearTotals.get(year)!
     t.clean += (rec.clean_generation as number) || 0
     t.fossil += (rec.fossil_generation as number) || 0
     t.total += (rec.total_generation as number) || 0
+    t.solar += (rec.solar_generation as number) || 0
+    t.wind += (rec.wind_generation as number) || 0
+    t.hydro += (rec.hydro_generation as number) || 0
+    t.nuclear += (rec.nuclear_generation as number) || 0
+    t.bioenergy += (rec.bioenergy_generation as number) || 0
+    t.other_renewables += (rec.other_renewables_generation as number) || 0
+    t.coal += (rec.coal_generation as number) || 0
+    t.gas += (rec.gas_generation as number) || 0
+    t.oil += (rec.oil_generation as number) || 0
+    t.fossil_emissions += (rec.fossil_emissions as number) || 0
   }
   for (const [year, t] of yearTotals) {
     const key = `WLD__${year}`
@@ -139,6 +153,17 @@ function groupByCountryYear(rows: CsvRow[]) {
       clean_generation: t.clean,
       fossil_generation: t.fossil,
       total_generation: t.total,
+      solar_generation: t.solar,
+      wind_generation: t.wind,
+      hydro_generation: t.hydro,
+      nuclear_generation: t.nuclear,
+      bioenergy_generation: t.bioenergy,
+      other_renewables_generation: t.other_renewables,
+      coal_generation: t.coal,
+      gas_generation: t.gas,
+      oil_generation: t.oil,
+      fossil_emissions: t.fossil_emissions,
+      carbon_intensity_gco2_kwh: t.total > 0 ? (t.fossil_emissions / t.total) * 1000 : null,
       clean_share: t.total > 0 ? (t.clean / t.total) * 100 : null,
       fossil_share: t.total > 0 ? (t.fossil / t.total) * 100 : null,
     })
