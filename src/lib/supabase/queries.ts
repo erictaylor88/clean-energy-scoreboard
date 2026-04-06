@@ -238,14 +238,32 @@ export async function getRaceData() {
 
   const countryMap = new Map(countries.map(c => [c.id, c]))
 
-  const { data: genData } = await supabase
-    .from('generation_yearly')
-    .select('country_id, year, clean_share, total_generation')
-    .gte('year', 2000)
-    .order('year', { ascending: true })
-    .limit(10000)
+  // Supabase enforces PGRST_MAX_ROWS=1000 server-side — .limit() can't override it.
+  // Paginate with .range() to get all ~2,800+ rows.
+  const allGenData: Array<{ country_id: number; year: number; clean_share: number | null; total_generation: number | null }> = []
+  const PAGE_SIZE = 1000
+  let offset = 0
+  let hasMore = true
 
-  if (!genData) return { countries: [], years: [], data: [] }
+  while (hasMore) {
+    const { data: page } = await supabase
+      .from('generation_yearly')
+      .select('country_id, year, clean_share, total_generation')
+      .gte('year', 2000)
+      .order('year', { ascending: true })
+      .range(offset, offset + PAGE_SIZE - 1)
+
+    if (!page || page.length === 0) {
+      hasMore = false
+    } else {
+      allGenData.push(...page)
+      offset += page.length
+      if (page.length < PAGE_SIZE) hasMore = false
+    }
+  }
+
+  if (allGenData.length === 0) return { countries: [], years: [], data: [] }
+  const genData = allGenData
 
   // Build year→country→value map, filtering to countries with meaningful generation
   const yearSet = new Set<number>()
