@@ -214,38 +214,55 @@ export default function BarChartRace({ data, years }: Props) {
       .remove()
   }, [currentYear, years, getTopN, isMobile])
 
-  // Keep a ref synced with current year index for the timeout chain
-  const yearIdxRef = useRef(currentYearIdx)
-  useEffect(() => { yearIdxRef.current = currentYearIdx }, [currentYearIdx])
+  // Animation runs entirely through refs — no useEffect timer, no stale closures
+  const yearIdxRef = useRef(0)
+  const animRunning = useRef(false)
 
-  // Play via setTimeout chain (avoids stale closure issues with setInterval)
-  useEffect(() => {
-    if (!isPlaying) return
+  const stopAnimation = useCallback(() => {
+    animRunning.current = false
+    if (timerRef.current) {
+      clearTimeout(timerRef.current)
+      timerRef.current = null
+    }
+  }, [])
+
+  const startAnimation = useCallback(() => {
+    animRunning.current = true
 
     const step = () => {
+      if (!animRunning.current) return
       const nextIdx = yearIdxRef.current + 1
       if (nextIdx >= years.length) {
+        animRunning.current = false
         setIsPlaying(false)
         return
       }
-      setCurrentYearIdx(nextIdx)
       yearIdxRef.current = nextIdx
+      setCurrentYearIdx(nextIdx)
       timerRef.current = setTimeout(step, TRANSITION_MS + 200)
     }
 
     timerRef.current = setTimeout(step, TRANSITION_MS + 200)
+  }, [years.length])
 
-    return () => {
-      if (timerRef.current) clearTimeout(timerRef.current)
-    }
-  }, [isPlaying, years.length])
+  // Cleanup on unmount only
+  useEffect(() => {
+    return () => stopAnimation()
+  }, [stopAnimation])
 
   const handlePlayPause = () => {
-    if (currentYearIdx >= years.length - 1) {
-      setCurrentYearIdx(0)
-      setIsPlaying(true)
+    if (isPlaying) {
+      stopAnimation()
+      setIsPlaying(false)
     } else {
-      setIsPlaying(prev => !prev)
+      if (currentYearIdx >= years.length - 1) {
+        setCurrentYearIdx(0)
+        yearIdxRef.current = 0
+      } else {
+        yearIdxRef.current = currentYearIdx
+      }
+      setIsPlaying(true)
+      startAnimation()
     }
   }
 
@@ -284,8 +301,11 @@ export default function BarChartRace({ data, years }: Props) {
           max={years.length - 1}
           value={currentYearIdx}
           onChange={(e) => {
+            stopAnimation()
             setIsPlaying(false)
-            setCurrentYearIdx(parseInt(e.target.value))
+            const idx = parseInt(e.target.value)
+            yearIdxRef.current = idx
+            setCurrentYearIdx(idx)
           }}
           className="flex-1 h-1 rounded-full appearance-none cursor-pointer"
           style={{
