@@ -14,18 +14,25 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  const url = new URL(request.url)
+  const source = url.searchParams.get('source') // 'ember', 'eia', or null (both)
+
   const results: Record<string, unknown> = {}
 
-  try {
-    results.ember = await syncEmberYearly()
-  } catch (error) {
-    results.ember = { error: error instanceof Error ? error.message : 'Unknown error' }
+  if (!source || source === 'ember') {
+    try {
+      results.ember = await syncEmberYearly()
+    } catch (error) {
+      results.ember = { error: error instanceof Error ? error.message : 'Unknown error' }
+    }
   }
 
-  try {
-    results.eia = await syncEiaStates()
-  } catch (error) {
-    results.eia = { error: error instanceof Error ? error.message : 'Unknown error' }
+  if (!source || source === 'eia') {
+    try {
+      results.eia = await syncEiaStates()
+    } catch (error) {
+      results.eia = { error: error instanceof Error ? error.message : 'Unknown error' }
+    }
   }
 
   const hasError = Object.values(results).some(r => r && typeof r === 'object' && 'error' in (r as Record<string, unknown>))
