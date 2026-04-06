@@ -132,13 +132,13 @@ export default function BarChartRace({ data, years }: Props) {
         .attr('text-anchor', 'end')
         .attr('font-family', "'DM Sans Variable', system-ui, sans-serif")
         .attr('font-weight', '700')
-        .attr('fill', 'var(--border-default)')
-        .attr('opacity', 0.5)
+        .attr('fill', 'var(--text-muted)')
+        .attr('opacity', 0.3)
     }
     yearLabel
       .attr('x', width - margin.right)
       .attr('y', height - margin.bottom - 20)
-      .attr('font-size', isMobile ? '48px' : '72px')
+      .attr('font-size', isMobile ? '64px' : '96px')
       .text(currentYear)
 
     // Bars
@@ -233,23 +233,26 @@ export default function BarChartRace({ data, years }: Props) {
 
   // Play/pause logic
   useEffect(() => {
-    if (isPlaying) {
-      timerRef.current = setInterval(() => {
-        setCurrentYearIdx(prev => {
-          if (prev >= years.length - 1) {
-            setIsPlaying(false)
-            return prev
-          }
-          return prev + 1
-        })
-      }, TRANSITION_MS + 200)
-    } else {
-      if (timerRef.current) clearInterval(timerRef.current)
-    }
+    if (!isPlaying) return
+    
+    timerRef.current = setInterval(() => {
+      setCurrentYearIdx(prev => {
+        if (prev >= years.length - 1) return prev
+        return prev + 1
+      })
+    }, TRANSITION_MS + 200)
+
     return () => {
       if (timerRef.current) clearInterval(timerRef.current)
     }
   }, [isPlaying, years.length])
+
+  // Stop playing when we reach the end (separate effect to avoid race condition)
+  useEffect(() => {
+    if (isPlaying && currentYearIdx >= years.length - 1) {
+      setIsPlaying(false)
+    }
+  }, [currentYearIdx, isPlaying, years.length])
 
   const handlePlayPause = () => {
     if (currentYearIdx >= years.length - 1) {
