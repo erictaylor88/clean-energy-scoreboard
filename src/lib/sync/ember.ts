@@ -1,95 +1,98 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-const EMBER_BASE = 'https://api.ember-climate.org'
+const EMBER_CSV_URL = 'https://raw.githubusercontent.com/ember-energy/ember-data-api/main/data/generation_annual_database.csv'
 
-type EmberRow = {
+type ParsedRow = {
   entity: string
   entity_code: string
-  date: string
-  category: string
-  subcategory: string
+  year: number
   variable: string
-  value: number
   unit: string
-  is_aggregate_series?: boolean
+  value: number
+  subcategory: string
+  is_aggregate_entity: boolean
 }
 
-// Fetch all yearly electricity data from Ember
-async function fetchEmberYearly(apiKey: string): Promise<EmberRow[]> {
-  const allRows: EmberRow[] = []
-  let offset = 0
-  const limit = 5000
+function parseCSV(text: string): ParsedRow[] {
+  const lines = text.split('\n')
+  if (lines.length < 2) return []
+  const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''))
+  const rows: ParsedRow[] = []
 
-  while (true) {
-    const url = `${EMBER_BASE}/ember/generation_annual.json?api_key=${apiKey}&_shape=array&_size=${limit}&_offset=${offset}`
-    const res = await fetch(url, { next: { revalidate: 0 } })
-
-    if (!res.ok) {
-      throw new Error(`Ember API error: ${res.status} ${res.statusText}`)
+  for (let i = 1; i < lines.length; i++) {
+    const line = lines[i].trim()
+    if (!line) continue
+    const values: string[] = []
+    let current = ''
+    let inQuotes = false
+    for (const char of line) {
+      if (char === '"') { inQuotes = !inQuotes }
+      else if (char === ',' && !inQuotes) { values.push(current.trim()); current = '' }
+      else { current += char }
     }
+    values.push(current.trim())
 
-    const rows: EmberRow[] = await res.json()
-    allRows.push(...rows)
+    const obj: Record<string, string> = {}
+    headers.forEach((h, idx) => { obj[h] = values[idx] || '' })
 
-    if (rows.length < limit) break
-    offset += limit
+    const val = parseFloat(obj['value'] || obj['Value'] || '')
+    if (isNaN(val)) continue
+
+    rows.push({
+      entity: obj['entity'] || obj['Entity'] || '',
+      entity_code: obj['entity_code'] || obj['Entity code'] || '',
+      year: parseInt(obj['date'] || obj['Date'] || obj['year'] || '0'),
+      variable: (obj['variable'] || obj['Variable'] || '').toLowerCase(),
+      unit: obj['unit'] || obj['Unit'] || '',
+      value: val,
+      subcategory: (obj['subcategory'] || obj['Subcategory'] || '').toLowerCase(),
+      is_aggregate_entity: (obj['is_aggregate_entity'] || obj['is_aggregate_series'] || '') === 'true',
+    })
   }
-
-  return allRows
+  return rows
 }
 
-// Transform Ember's flat rows into structured country-year records
-function transformEmberData(rows: EmberRow[]) {
-  // Group by entity + year
+function groupByCountryYear(rows: ParsedRow[]) {
   const grouped = new Map<string, Record<string, number | string | boolean>>()
 
   for (const row of rows) {
-    const key = `${row.entity_code}__${row.date}`
+    if (!row.entity_code || !row.year) continue
+    const key = `${row.entity_code}__${row.year}`
     if (!grouped.has(key)) {
       grouped.set(key, {
-        entity: row.entity,
-        entity_code: row.entity_code,
-        year: parseInt(row.date),
-        is_aggregate: row.is_aggregate_series ?? false,
+        entity: row.entity, entity_code: row.entity_code,
+        year: row.year, is_aggregate: row.is_aggregate_entity,
       })
     }
     const record = grouped.get(key)!
+    const sub = row.subcategory
 
-    // Map Ember variables to our columns
-    const variable = row.variable?.toLowerCase()
-    const subcategory = row.subcategory?.toLowerCase()
-
-    if (variable === 'generation' && row.unit === 'TWh') {
-      if (subcategory === 'total') record.total_generation = row.value
-      else if (subcategory === 'clean') record.clean_generation = row.value
-      else if (subcategory === 'fossil') record.fossil_generation = row.value
-      else if (subcategory === 'solar') record.solar_generation = row.value
-      else if (subcategory === 'wind') record.wind_generation = row.value
-      else if (subcategory === 'hydro') record.hydro_generation = row.value
-      else if (subcategory === 'nuclear') record.nuclear_generation = row.value
-      else if (subcategory === 'bioenergy') record.bioenergy_generation = row.value
-      else if (subcategory === 'other renewables') record.other_renewables_generation = row.value
-      else if (subcategory === 'coal') record.coal_generation = row.value
-      else if (subcategory === 'gas') record.gas_generation = row.value
-      else if (subcategory === 'oil') record.oil_generation = row.value
-    } else if (variable === 'share' || variable === 'electricity share') {
-      if (subcategory === 'clean') record.clean_share = row.value
-      else if (subcategory === 'fossil') record.fossil_share = row.value
-    } else if (variable === 'carbon intensity' || variable === 'co2 intensity') {
+    if ((row.variable === 'generation' || row.variable === 'electricity generation') && row.unit.toLowerCase() === 'twh') {
+      if (sub === 'total' || sub === 'total generation') record.total_generation = row.value
+      else if (sub === 'clean') record.clean_generation = row.value
+      else if (sub === 'fossil') record.fossil_generation = row.value
+      else if (sub === 'solar') record.solar_generation = row.value
+      else if (sub === 'wind') record.wind_generation = row.value
+      else if (sub === 'hydro') record.hydro_generation = row.value
+      else if (sub === 'nuclear') record.nuclear_generation = row.value
+      else if (sub === 'bioenergy') record.bioenergy_generation = row.value
+      else if (sub === 'other renewables') record.other_renewables_generation = row.value
+      else if (sub === 'coal') record.coal_generation = row.value
+      else if (sub === 'gas') record.gas_generation = row.value
+      else if (sub === 'oil') record.oil_generation = row.value
+    } else if (row.variable === 'share' || row.variable === 'electricity share' || row.variable === '% share') {
+      if (sub === 'clean') record.clean_share = row.value
+      else if (sub === 'fossil') record.fossil_share = row.value
+    } else if (row.variable === 'carbon intensity' || row.variable === 'co2 intensity' || row.variable === 'emissions intensity') {
       record.carbon_intensity_gco2_kwh = row.value
     }
   }
-
   return grouped
 }
 
 export async function syncEmberYearly() {
-  const apiKey = process.env.EMBER_API_KEY
-  if (!apiKey) throw new Error('EMBER_API_KEY not set')
-
   const supabase = createServiceClient()
 
-  // Log sync start
   const { data: syncLog } = await supabase
     .from('sync_log')
     .insert({ source: 'ember_yearly', status: 'running' })
@@ -97,52 +100,43 @@ export async function syncEmberYearly() {
     .single()
 
   try {
-    // Fetch from Ember
-    const rows = await fetchEmberYearly(apiKey)
+    // Fetch CSV from Ember's GitHub
+    const res = await fetch(EMBER_CSV_URL, { next: { revalidate: 0 } })
+    if (!res.ok) throw new Error(`Failed to fetch Ember CSV: ${res.status}`)
+    const text = await res.text()
+    const rows = parseCSV(text)
 
-    // Transform
-    const grouped = transformEmberData(rows)
+    if (rows.length === 0) throw new Error('No data parsed from Ember CSV')
+
+    const grouped = groupByCountryYear(rows)
 
     // Collect unique entities
     const entities = new Map<string, { name: string; code: string; is_aggregate: boolean }>()
     for (const record of grouped.values()) {
       const code = record.entity_code as string
       if (!entities.has(code)) {
-        entities.set(code, {
-          name: record.entity as string,
-          code,
-          is_aggregate: !!record.is_aggregate,
-        })
+        entities.set(code, { name: record.entity as string, code, is_aggregate: !!record.is_aggregate })
       }
     }
 
     // Upsert countries
     const countryRows = Array.from(entities.values()).map(e => ({
-      name: e.name,
-      code: e.code,
+      name: e.name, code: e.code,
       slug: e.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
       is_aggregate: e.is_aggregate,
     }))
-
     await supabase.from('countries').upsert(countryRows, { onConflict: 'code' })
 
-    // Fetch country IDs
-    const { data: countries } = await supabase
-      .from('countries')
-      .select('id, code')
-
+    const { data: countries } = await supabase.from('countries').select('id, code')
     if (!countries) throw new Error('Failed to fetch countries after upsert')
-
     const countryIdMap = new Map(countries.map(c => [c.code, c.id]))
 
-    // Prepare generation records
     const genRecords = Array.from(grouped.values())
       .map(record => {
         const countryId = countryIdMap.get(record.entity_code as string)
         if (!countryId) return null
         return {
-          country_id: countryId,
-          year: record.year as number,
+          country_id: countryId, year: record.year as number,
           total_generation: record.total_generation ?? null,
           clean_generation: record.clean_generation ?? null,
           fossil_generation: record.fossil_generation ?? null,
@@ -162,37 +156,26 @@ export async function syncEmberYearly() {
       })
       .filter(Boolean) as Array<Record<string, unknown>>
 
-    // Upsert in batches of 500
     let upserted = 0
     for (let i = 0; i < genRecords.length; i += 500) {
       const batch = genRecords.slice(i, i + 500)
-      const { error } = await supabase
-        .from('generation_yearly')
-        .upsert(batch, { onConflict: 'country_id,year' })
-
-      if (error) throw new Error(`Upsert batch error: ${error.message}`)
+      const { error } = await supabase.from('generation_yearly').upsert(batch, { onConflict: 'country_id,year' })
+      if (error) throw new Error(`Upsert error: ${error.message}`)
       upserted += batch.length
     }
 
-    // Update sync log
-    await supabase
-      .from('sync_log')
-      .update({
-        status: 'success',
-        records_fetched: rows.length,
-        records_upserted: upserted,
-        completed_at: new Date().toISOString(),
-      })
-      .eq('id', syncLog?.id)
+    await supabase.from('sync_log').update({
+      status: 'success', records_fetched: rows.length, records_upserted: upserted,
+      completed_at: new Date().toISOString(),
+    }).eq('id', syncLog?.id)
 
-    return { success: true, fetched: rows.length, upserted }
+    return { success: true, source: 'github_csv', fetched: rows.length, upserted }
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Unknown error'
     if (syncLog?.id) {
-      await supabase
-        .from('sync_log')
-        .update({ status: 'error', error_message: msg, completed_at: new Date().toISOString() })
-        .eq('id', syncLog.id)
+      await supabase.from('sync_log').update({
+        status: 'error', error_message: msg, completed_at: new Date().toISOString(),
+      }).eq('id', syncLog.id)
     }
     throw error
   }
