@@ -1,6 +1,8 @@
 import { getLatestWorldData, getCountryLeaderboard, getLastSyncTime, getHistoricalTrend } from '@/lib/supabase/queries'
+import { projectMilestones } from '@/lib/projections'
 // TrendChart loaded via client wrapper
 import Leaderboard from '@/components/Leaderboard'
+import MilestoneCountdown from '@/components/MilestoneCountdown'
 
 import TrendChart from '@/components/TrendChartWrapper'
 
@@ -18,6 +20,11 @@ export default async function Home() {
   const fossilShare = worldData?.latest?.fossil_share ?? null
   const momentum = worldData?.momentum ?? null
   const dataYear = worldData?.latest?.year ?? null
+
+  // Compute milestone projections from trend data
+  const projections = trendData.length > 0
+    ? projectMilestones(trendData, [50, 60, 75])
+    : []
 
   return (
     <div className="flex flex-col min-h-screen">
@@ -91,6 +98,21 @@ export default async function Home() {
         </div>
         <TrendChart data={trendData} />
       </section>
+
+      {/* Milestones */}
+      {projections.length > 0 && (
+        <section id="milestones" className="max-w-[1200px] mx-auto w-full px-4 md:px-10 pb-12">
+          <div className="pt-12 pb-6 border-t border-border-subtle">
+            <h2 className="font-display font-semibold text-[28px] leading-tight text-text-primary">
+              When Do We Cross Over?
+            </h2>
+            <p className="font-body text-base text-text-secondary mt-2 max-w-[50ch]">
+              Projected years to hit key milestones, based on the last 5 years of growth.
+            </p>
+          </div>
+          <MilestoneCountdown projections={projections} currentYear={dataYear ?? new Date().getFullYear()} />
+        </section>
+      )}
 
       {/* Footer */}
       <footer className="mt-auto border-t border-border-subtle py-8 px-4 md:px-10">
