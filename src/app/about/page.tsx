@@ -89,6 +89,12 @@ export default function AboutPage() {
             <p className="mt-3">
               <strong className="text-text-primary">Caching:</strong> Pages are statically generated and revalidated every 24 hours. Data may be up to one day behind the latest Supabase sync.
             </p>
+            <p className="mt-3">
+              <strong className="text-text-primary">Scope — electricity only:</strong> All data covers electricity generation only. It does not include energy used for heating, transport, cooking, or industrial processes. A country&apos;s clean electricity share may differ significantly from its overall clean energy share.
+            </p>
+            <p className="mt-3">
+              <strong className="text-text-primary">Low electricity access:</strong> Some countries (particularly in Sub-Saharan Africa and parts of Southeast Asia) have very low rates of electricity access. These countries may show high clean energy shares because their small grids are often hydro-dominated, but this does not reflect the energy reality for most of their population. Country pages for these nations include a context badge.
+            </p>
           </section>
 
           {/* Open source */}
