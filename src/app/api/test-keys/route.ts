@@ -23,26 +23,27 @@ export async function GET() {
     if (!key) {
       results.ember = { ok: false, detail: 'EMBER_API_KEY not set' }
     } else {
-      const endpoints = [
-        '/ember/generation_yearly.json',
-        '/ember/generation_annual.json',
-        '/ember/yearly_full_data.json',
-        '/ember.json',
-      ]
+      const bases = ['https://api.ember-energy.org', 'https://api.ember-climate.org']
+      const paths = ['/ember/generation_annual.json', '/ember/generation_yearly.json', '/v1/electricity-generation/yearly.json']
       const tried: string[] = []
-      for (const ep of endpoints) {
-        const res = await fetch(
-          `https://api.ember-climate.org${ep}?api_key=${key}&_size=1&_shape=array`
-        )
-        if (res.ok) {
-          const data = await res.json()
-          const keys = Array.isArray(data) && data[0] ? Object.keys(data[0]).slice(0, 8).join(', ') : 'none'
-          results.ember = { ok: true, detail: `${ep} — keys: ${keys}` }
-          break
-        } else {
-          tried.push(`${ep}→${res.status}`)
-          results.ember = { ok: false, detail: `Tried: ${tried.join('; ')}` }
+      let found = false
+      for (const base of bases) {
+        for (const ep of paths) {
+          const res = await fetch(`${base}${ep}?api_key=${key}&_size=1&_shape=array`)
+          if (res.ok) {
+            const data = await res.json()
+            const keys = Array.isArray(data) && data[0] ? Object.keys(data[0]).slice(0, 8).join(', ') : 'none'
+            results.ember = { ok: true, detail: `${base}${ep} — keys: ${keys}` }
+            found = true
+            break
+          } else {
+            tried.push(`${base}${ep}→${res.status}`)
+          }
         }
+        if (found) break
+      }
+      if (!found) {
+        results.ember = { ok: false, detail: `All failed: ${tried.join('; ')}` }
       }
     }
   } catch (e) {
