@@ -72,7 +72,7 @@ export default function BarChartRace({ data, years }: Props) {
   const [currentYearIdx, setCurrentYearIdx] = useState(0)
   const [isPlaying, setIsPlaying] = useState(false)
   const [isMobile, setIsMobile] = useState(false)
-  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const currentYear = years[currentYearIdx] ?? years[0]
 
@@ -123,23 +123,6 @@ export default function BarChartRace({ data, years }: Props) {
     if (g.empty()) {
       g = svg.append('g').attr('class', 'chart-area')
     }
-
-    // Year label (large, behind bars)
-    let yearLabel = svg.select<SVGTextElement>('text.year-label')
-    if (yearLabel.empty()) {
-      yearLabel = svg.append('text')
-        .attr('class', 'year-label')
-        .attr('text-anchor', 'end')
-        .attr('font-family', "'DM Sans Variable', system-ui, sans-serif")
-        .attr('font-weight', '700')
-        .attr('fill', 'var(--text-muted)')
-        .attr('opacity', 0.3)
-    }
-    yearLabel
-      .attr('x', width - margin.right)
-      .attr('y', height - margin.bottom - 20)
-      .attr('font-size', isMobile ? '64px' : '96px')
-      .text(currentYear)
 
     // Bars
     const bars = g.selectAll<SVGRectElement, typeof topData[number]>('rect.bar')
@@ -231,28 +214,31 @@ export default function BarChartRace({ data, years }: Props) {
       .remove()
   }, [currentYear, years, getTopN, isMobile])
 
-  // Play/pause logic
+  // Keep a ref synced with current year index for the timeout chain
+  const yearIdxRef = useRef(currentYearIdx)
+  useEffect(() => { yearIdxRef.current = currentYearIdx }, [currentYearIdx])
+
+  // Play via setTimeout chain (avoids stale closure issues with setInterval)
   useEffect(() => {
     if (!isPlaying) return
-    
-    timerRef.current = setInterval(() => {
-      setCurrentYearIdx(prev => {
-        if (prev >= years.length - 1) return prev
-        return prev + 1
-      })
-    }, TRANSITION_MS + 200)
+
+    const step = () => {
+      const nextIdx = yearIdxRef.current + 1
+      if (nextIdx >= years.length) {
+        setIsPlaying(false)
+        return
+      }
+      setCurrentYearIdx(nextIdx)
+      yearIdxRef.current = nextIdx
+      timerRef.current = setTimeout(step, TRANSITION_MS + 200)
+    }
+
+    timerRef.current = setTimeout(step, TRANSITION_MS + 200)
 
     return () => {
-      if (timerRef.current) clearInterval(timerRef.current)
+      if (timerRef.current) clearTimeout(timerRef.current)
     }
   }, [isPlaying, years.length])
-
-  // Stop playing when we reach the end (separate effect to avoid race condition)
-  useEffect(() => {
-    if (isPlaying && currentYearIdx >= years.length - 1) {
-      setIsPlaying(false)
-    }
-  }, [currentYearIdx, isPlaying, years.length])
 
   const handlePlayPause = () => {
     if (currentYearIdx >= years.length - 1) {
