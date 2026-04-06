@@ -71,7 +71,7 @@ function buildStateYearData(rows: EiaRow[]) {
     // Skip US-Total and other aggregates
     if (row.stateid === 'US' || row.stateid.length !== 2) continue
     // Skip if no generation value
-    const gen = parseFloat(row.generation)
+    const gen = Number(row.generation)
     if (isNaN(gen)) continue
 
     const year = parseInt(row.period)
