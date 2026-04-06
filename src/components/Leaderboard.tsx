@@ -83,7 +83,7 @@ export default function Leaderboard({ data }: { data: LeaderboardCountry[] }) {
             </span>
             {country.momentum !== null && (
               <span
-                className={`w-[72px] text-center text-xs font-body font-medium px-2 py-0.5 rounded-full ml-3 ${
+                className={`hidden sm:inline-block w-[72px] text-center text-xs font-body font-medium px-2 py-0.5 rounded-full ml-3 ${
                   country.momentum >= 0
                     ? 'bg-[rgba(34,197,94,0.15)] text-accent-green'
                     : 'bg-[rgba(239,68,68,0.15)] text-accent-red'
@@ -92,7 +92,7 @@ export default function Leaderboard({ data }: { data: LeaderboardCountry[] }) {
                 {country.momentum >= 0 ? '+' : ''}{country.momentum.toFixed(1)}
               </span>
             )}
-            <span className="w-5 ml-2 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity">
+            <span className="w-5 ml-2 text-text-muted opacity-0 group-hover:opacity-100 transition-opacity hidden sm:inline">
               ›
             </span>
           </Link>
