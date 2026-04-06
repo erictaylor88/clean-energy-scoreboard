@@ -1,6 +1,6 @@
 import { createServiceClient } from '@/lib/supabase/server'
 
-const EIA_BASE = 'https://api.eia.gov/v2/electricity/electric-power-operational-data'
+const EIA_BASE = 'https://api.eia.gov/v2/electricity/electric-power-operational-data/data'
 
 // EIA fuel type → our category mapping
 const CLEAN_FUELS = new Set(['SUN', 'WND', 'HYC', 'NUC', 'GEO', 'WAS', 'WWW'])
@@ -29,7 +29,6 @@ async function fetchEiaPage(apiKey: string, offset: number, length: number) {
     `api_key=${apiKey}`,
     `frequency=annual`,
     `data[0]=generation`,
-    `facets[sectorDescription][]=all%20sectors`,
     `start=2000`,
     `sort[0][column]=period`,
     `sort[0][direction]=asc`,
