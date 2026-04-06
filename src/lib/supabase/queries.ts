@@ -243,6 +243,7 @@ export async function getRaceData() {
     .select('country_id, year, clean_share, total_generation')
     .gte('year', 2000)
     .order('year', { ascending: true })
+    .limit(10000)
 
   if (!genData) return { countries: [], years: [], data: [] }
 
