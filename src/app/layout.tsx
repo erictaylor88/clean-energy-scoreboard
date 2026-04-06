@@ -3,6 +3,7 @@ import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/inter";
 import "./globals.css";
 import Header from "@/components/Header";
+import { Analytics } from "@vercel/analytics/next";
 
 export const metadata: Metadata = {
   title: {
@@ -40,6 +41,7 @@ export default function RootLayout({
         <main id="main" className="flex flex-col min-h-screen">
           {children}
         </main>
+        <Analytics />
       </body>
     </html>
   );
