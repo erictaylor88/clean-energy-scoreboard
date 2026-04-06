@@ -296,3 +296,121 @@ export async function getRaceData() {
 
   return { countries: countries.filter(c => !c.is_aggregate), years, data: records }
 }
+
+// ===== US STATE QUERIES =====
+
+export type UsState = {
+  id: number
+  name: string
+  abbreviation: string
+  slug: string
+}
+
+export async function getStateLeaderboard() {
+  const supabase = createReadClient()
+
+  const { data: states } = await supabase
+    .from('us_states')
+    .select('id, name, abbreviation, slug')
+
+  if (!states || states.length === 0) return []
+
+  // Get latest year
+  const { data: yearData } = await supabase
+    .from('us_state_generation')
+    .select('year')
+    .order('year', { ascending: false })
+    .limit(1)
+    .single()
+
+  if (!yearData) return []
+  const latestYear = yearData.year
+
+  const { data: genData } = await supabase
+    .from('us_state_generation')
+    .select('state_id, year, clean_share, total_generation')
+    .in('year', [latestYear, latestYear - 1])
+
+  if (!genData) return []
+
+  const stateMap = new Map(states.map(s => [s.id, s]))
+  const dataByState = new Map<number, { latest: number | null; previous: number | null; total: number | null }>()
+
+  for (const row of genData) {
+    const existing = dataByState.get(row.state_id) || { latest: null, previous: null, total: null }
+    if (row.year === latestYear) {
+      existing.latest = row.clean_share
+      existing.total = row.total_generation
+    } else {
+      existing.previous = row.clean_share
+    }
+    dataByState.set(row.state_id, existing)
+  }
+
+  const leaderboard = Array.from(dataByState.entries())
+    .map(([stateId, data]) => {
+      const state = stateMap.get(stateId)
+      if (!state) return null
+      return {
+        ...state,
+        cleanShare: data.latest,
+        momentum: data.latest !== null && data.previous !== null
+          ? data.latest - data.previous
+          : null,
+      }
+    })
+    .filter(Boolean) as Array<{
+      id: number; name: string; abbreviation: string; slug: string;
+      cleanShare: number | null; momentum: number | null;
+    }>
+
+  leaderboard.sort((a, b) => (b.cleanShare ?? -999) - (a.cleanShare ?? -999))
+  return leaderboard
+}
+
+export async function getStateBySlug(slug: string) {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('us_states')
+    .select('*')
+    .eq('slug', slug)
+    .single()
+  return data
+}
+
+export async function getStateLatestData(stateId: number) {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('us_state_generation')
+    .select('*')
+    .eq('state_id', stateId)
+    .order('year', { ascending: false })
+    .limit(2)
+
+  if (!data || data.length === 0) return null
+  const latest = data[0]
+  const previous = data[1] || null
+  const momentum = previous
+    ? (latest.clean_share ?? 0) - (previous.clean_share ?? 0)
+    : null
+  return { latest, previous, momentum }
+}
+
+export async function getStateHistoricalTrend(stateId: number) {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('us_state_generation')
+    .select('year, clean_share, fossil_share, clean_generation, fossil_generation, total_generation')
+    .eq('state_id', stateId)
+    .gte('year', 2000)
+    .order('year', { ascending: true })
+  return data || []
+}
+
+export async function getAllStateSlugs() {
+  const supabase = createReadClient()
+  const { data } = await supabase
+    .from('us_states')
+    .select('slug')
+  return data || []
+}
