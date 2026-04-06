@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import "@fontsource-variable/dm-sans";
 import "@fontsource-variable/inter";
 import "./globals.css";
+import Header from "@/components/Header";
 
 export const metadata: Metadata = {
   title: {
@@ -35,6 +36,7 @@ export default function RootLayout({
         <a href="#main" className="skip-to-content">
           Skip to content
         </a>
+        <Header />
         <main id="main" className="flex flex-col min-h-screen">
           {children}
         </main>
