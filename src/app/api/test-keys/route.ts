@@ -17,34 +17,14 @@ export async function GET() {
     results.supabase = { ok: false, detail: (e as Error).message }
   }
 
-  // Test Ember — try multiple Datasette endpoint patterns
+  // Test Ember data source (GitHub CSV — API was retired)
   try {
-    const key = process.env.EMBER_API_KEY
-    if (!key) {
-      results.ember = { ok: false, detail: 'EMBER_API_KEY not set' }
+    const csvUrl = 'https://raw.githubusercontent.com/ember-energy/ember-data-api/main/data/api_generation_yearly.csv'
+    const res = await fetch(csvUrl, { method: 'HEAD' })
+    if (res.ok) {
+      results.ember = { ok: true, detail: `GitHub CSV reachable (${res.status}). Ember REST API retired; using CSV sync.` }
     } else {
-      const bases = ['https://api.ember-energy.org', 'https://api.ember-climate.org']
-      const paths = ['/ember/generation_annual.json', '/ember/generation_yearly.json', '/v1/electricity-generation/yearly.json']
-      const tried: string[] = []
-      let found = false
-      for (const base of bases) {
-        for (const ep of paths) {
-          const res = await fetch(`${base}${ep}?api_key=${key}&_size=1&_shape=array`)
-          if (res.ok) {
-            const data = await res.json()
-            const keys = Array.isArray(data) && data[0] ? Object.keys(data[0]).slice(0, 8).join(', ') : 'none'
-            results.ember = { ok: true, detail: `${base}${ep} — keys: ${keys}` }
-            found = true
-            break
-          } else {
-            tried.push(`${base}${ep}→${res.status}`)
-          }
-        }
-        if (found) break
-      }
-      if (!found) {
-        results.ember = { ok: false, detail: `All failed: ${tried.join('; ')}` }
-      }
+      results.ember = { ok: false, detail: `GitHub CSV returned ${res.status}` }
     }
   } catch (e) {
     results.ember = { ok: false, detail: (e as Error).message }
