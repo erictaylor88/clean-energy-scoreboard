@@ -1,4 +1,3 @@
-import Link from 'next/link'
 import type { Metadata } from 'next'
 
 export const metadata: Metadata = {
@@ -9,15 +8,6 @@ export const metadata: Metadata = {
 export default function AboutPage() {
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border-default bg-[rgba(8,15,12,0.8)] backdrop-blur-[12px]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-10 h-12 flex items-center">
-          <Link href="/" className="font-display font-bold text-text-primary text-sm tracking-tight hover:text-accent-green transition-colors">
-            ← Scoreboard
-          </Link>
-        </div>
-      </header>
-
       <div className="max-w-[720px] mx-auto w-full px-4 md:px-10 py-12 md:py-20">
         <h1 className="font-display font-bold text-[36px] md:text-[48px] leading-tight text-text-primary mb-8">
           About
