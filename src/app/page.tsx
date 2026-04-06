@@ -21,25 +21,6 @@ export default async function Home() {
 
   return (
     <div className="flex flex-col min-h-screen">
-      {/* Header */}
-      <header className="sticky top-0 z-50 border-b border-border-default bg-[rgba(8,15,12,0.8)] backdrop-blur-[12px]">
-        <div className="max-w-[1200px] mx-auto px-4 md:px-10 h-12 flex items-center justify-between">
-          <span className="font-display font-bold text-text-primary text-sm tracking-tight">
-            Clean Energy Scoreboard
-          </span>
-          <nav className="hidden md:flex items-center gap-6 text-sm font-body text-text-secondary">
-            <a href="#rankings" className="hover:text-text-primary transition-colors duration-150">Rankings</a>
-            <a href="#trends" className="hover:text-text-primary transition-colors duration-150">Trends</a>
-            <a href="/about" className="hover:text-text-primary transition-colors duration-150">About</a>
-          </nav>
-          {lastSync && (
-            <span className="text-xs font-body text-text-muted hidden md:block">
-              Updated {new Date(lastSync).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
-            </span>
-          )}
-        </div>
-      </header>
-
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center px-4 py-20">
         <p className="text-xs md:text-sm font-body font-medium text-text-secondary uppercase tracking-[0.05em] mb-3">
