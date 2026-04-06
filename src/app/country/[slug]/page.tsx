@@ -7,6 +7,16 @@ import TrendChart from '@/components/TrendChartWrapper'
 
 export const revalidate = 86400
 
+// Countries with electricity access rates below ~60% (World Bank data)
+// These countries may show high clean energy share because their small grids
+// are often hydro-dominated, but most of the population lacks electricity access.
+const LOW_ACCESS_COUNTRIES = new Set([
+  'COD', 'TCD', 'SSD', 'BDI', 'CAF', 'NER', 'MWI', 'MOZ', 'MDG',
+  'TZA', 'ETH', 'UGA', 'SLE', 'LBR', 'GIN', 'ZMB', 'AGO', 'MLI',
+  'BFA', 'RWA', 'MRT', 'SOM', 'GMB', 'GNB', 'ERI', 'LSO', 'HTI',
+  'MMR', 'PNG', 'LAO', 'KHM',
+])
+
 type Props = { params: Promise<{ slug: string }> }
 
 export async function generateMetadata({ params }: Props): Promise<Metadata> {
@@ -105,6 +115,21 @@ export default async function CountryPage({ params }: Props) {
                 <span className="text-accent-fossil">{fossilShare?.toFixed(1)}% Fossil</span>
               </div>
             </div>
+
+            {/* Low electricity access context badge */}
+            {LOW_ACCESS_COUNTRIES.has(country.code) && (
+              <div className="mt-6 w-full max-w-[480px] rounded-lg px-4 py-3 text-left"
+                style={{ background: 'rgba(245, 158, 11, 0.1)', border: '1px solid rgba(245, 158, 11, 0.25)' }}>
+                <p className="text-xs font-body font-medium" style={{ color: '#F59E0B' }}>
+                  ⚠ Low electricity access
+                </p>
+                <p className="text-xs font-body mt-1" style={{ color: 'var(--text-secondary)' }}>
+                  A large share of {country.name}&apos;s population lacks access to electricity. The clean energy
+                  share shown here reflects only the existing grid, which may be small and hydro-dominated. This
+                  does not capture the country&apos;s total energy picture.
+                </p>
+              </div>
+            )}
           </>
         ) : (
           <p className="text-sm text-text-secondary font-body mt-4">No data available for this country.</p>
@@ -166,6 +191,7 @@ export default async function CountryPage({ params }: Props) {
               Ember
             </a>{' '}
             (CC-BY-4.0). Clean energy = solar + wind + hydro + nuclear + bioenergy + other renewables.
+            Covers electricity generation only — does not include heating, transport, or industrial energy use.
           </p>
           {lastSync && (
             <p>Last updated: {new Date(lastSync).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</p>
