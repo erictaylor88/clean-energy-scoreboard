@@ -78,22 +78,22 @@ export default function AboutPage() {
           <section>
             <h2 className="font-display font-semibold text-[22px] text-text-primary mb-3">Methodology</h2>
             <p>
-              <strong className="text-text-primary">Update cadence:</strong> Data is refreshed twice per month, matching Ember&apos;s publication schedule (first and third week of each month).
+              <strong className="text-text-primary">Update cadence:</strong>{' '}Data is refreshed twice per month, matching Ember&apos;s publication schedule (first and third week of each month).
             </p>
             <p className="mt-3">
-              <strong className="text-text-primary">Momentum:</strong> The year-over-year change in clean energy share (in percentage points). A country with 50% clean share last year and 53% this year has +3.0pp momentum.
+              <strong className="text-text-primary">Momentum:</strong>{' '}The year-over-year change in clean energy share (in percentage points). A country with 50% clean share last year and 53% this year has +3.0pp momentum.
             </p>
             <p className="mt-3">
-              <strong className="text-text-primary">Leaderboard:</strong> Countries are ranked by clean energy share of electricity generation. Countries with less than 1 TWh of total generation are excluded to avoid statistical noise from very small economies.
+              <strong className="text-text-primary">Leaderboard:</strong>{' '}Countries are ranked by clean energy share of electricity generation. Countries with less than 1 TWh of total generation are excluded to avoid statistical noise from very small economies.
             </p>
             <p className="mt-3">
-              <strong className="text-text-primary">Caching:</strong> Pages are statically generated and revalidated every 24 hours. Data may be up to one day behind the latest Supabase sync.
+              <strong className="text-text-primary">Caching:</strong>{' '}Pages are statically generated and revalidated every 24 hours. Data may be up to one day behind the latest Supabase sync.
             </p>
             <p className="mt-3">
-              <strong className="text-text-primary">Scope — electricity only:</strong> All data covers electricity generation only. It does not include energy used for heating, transport, cooking, or industrial processes. A country&apos;s clean electricity share may differ significantly from its overall clean energy share.
+              <strong className="text-text-primary">Scope — electricity only:</strong>{' '}All data covers electricity generation only. It does not include energy used for heating, transport, cooking, or industrial processes. A country&apos;s clean electricity share may differ significantly from its overall clean energy share.
             </p>
             <p className="mt-3">
-              <strong className="text-text-primary">Low electricity access:</strong> Some countries (particularly in Sub-Saharan Africa and parts of Southeast Asia) have very low rates of electricity access. These countries may show high clean energy shares because their small grids are often hydro-dominated, but this does not reflect the energy reality for most of their population. Country pages for these nations include a context badge.
+              <strong className="text-text-primary">Low electricity access:</strong>{' '}Some countries (particularly in Sub-Saharan Africa and parts of Southeast Asia) have very low rates of electricity access. These countries may show high clean energy shares because their small grids are often hydro-dominated, but this does not reflect the energy reality for most of their population. Country pages for these nations include a context badge.
             </p>
           </section>
 
