@@ -166,12 +166,7 @@ export default function BarChartRace({ data, years }: Props) {
       .attr('width', d => Math.max(0, x(d.cleanShare)))
       .attr('height', y.bandwidth())
 
-    bars.exit()
-      .transition()
-      .duration(TRANSITION_MS / 2)
-      .attr('width', 0)
-      .attr('opacity', 0)
-      .remove()
+    bars.exit().remove()
 
     // Country labels (left of bars)
     const labels = g.selectAll<SVGTextElement, typeof topData[number]>('text.label')
@@ -200,11 +195,7 @@ export default function BarChartRace({ data, years }: Props) {
       .attr('font-size', labelFontSize)
       .text(d => `${codeToFlag(d.code)} ${isMobile ? d.code : d.name}`)
 
-    labels.exit()
-      .transition()
-      .duration(TRANSITION_MS / 2)
-      .attr('opacity', 0)
-      .remove()
+    labels.exit().remove()
 
     // Value labels (right of bars)
     const values = g.selectAll<SVGTextElement, typeof topData[number]>('text.value')
@@ -229,11 +220,7 @@ export default function BarChartRace({ data, years }: Props) {
       .attr('y', (_, i) => y(i)! + y.bandwidth() / 2 + 4)
       .text(d => `${d.cleanShare.toFixed(1)}%`)
 
-    values.exit()
-      .transition()
-      .duration(TRANSITION_MS / 2)
-      .attr('opacity', 0)
-      .remove()
+    values.exit().remove()
   }, [currentYear, years, getTopN, isMobile])
 
   // Animation runs entirely through refs — no useEffect timer, no stale closures
