@@ -45,7 +45,7 @@ export default async function EmbedLeaderboard() {
                 {c.name as string}
               </span>
               <span className="text-sm font-body font-semibold text-accent-green tabular-nums">
-                {(c.clean_share as number).toFixed(1)}%
+                {(c.cleanShare as number | null)?.toFixed(1) ?? '—'}%
               </span>
             </a>
           ))}
