@@ -56,12 +56,12 @@ export default function EmbedPage() {
                 <p className="text-xs font-body font-medium text-text-secondary uppercase tracking-[0.04em] mb-3">
                   Preview
                 </p>
-                <div className="rounded-lg overflow-hidden border border-border-subtle inline-block">
+                <div className="rounded-lg overflow-hidden border border-border-subtle inline-block max-w-full overflow-x-auto">
                   <iframe
                     src={w.path}
                     width={w.width}
                     height={w.height}
-                    style={{ border: 'none', borderRadius: '12px', overflow: 'hidden' }}
+                    style={{ border: 'none', borderRadius: '12px', overflow: 'hidden', maxWidth: '100%' }}
                     loading="lazy"
                   />
                 </div>
