@@ -19,7 +19,7 @@ type Props = {
 const TOP_N = 15
 const BAR_HEIGHT = 36
 const MARGIN = { top: 16, right: 80, bottom: 10, left: 160 }
-const MOBILE_MARGIN = { top: 16, right: 60, bottom: 10, left: 110 }
+const MOBILE_MARGIN = { top: 16, right: 60, bottom: 10, left: 80 }
 const TRANSITION_MS = 450
 
 // Country code → emoji flag
@@ -153,7 +153,7 @@ export default function BarChartRace({ data, years }: Props) {
       .attr('class', 'bar')
       .attr('rx', 4)
       .attr('fill', 'var(--accent-green)')
-      .attr('opacity', 0.85)
+      .attr('opacity', 0)
       .attr('x', margin.left)
       .attr('height', y.bandwidth())
       .attr('width', 0)
@@ -162,11 +162,18 @@ export default function BarChartRace({ data, years }: Props) {
       .transition()
       .duration(TRANSITION_MS)
       .ease(d3.easeLinear)
+      .attr('opacity', 0.85)
+      .attr('x', margin.left)
       .attr('y', (_, i) => y(i)!)
       .attr('width', d => Math.max(0, x(d.cleanShare)))
       .attr('height', y.bandwidth())
 
-    bars.exit().remove()
+    bars.exit()
+      .transition()
+      .duration(TRANSITION_MS / 3)
+      .attr('opacity', 0)
+      .attr('width', 0)
+      .remove()
 
     // Country labels (left of bars)
     const labels = g.selectAll<SVGTextElement, typeof topData[number]>('text.label')
@@ -177,25 +184,30 @@ export default function BarChartRace({ data, years }: Props) {
     labels.enter()
       .append('text')
       .attr('class', 'label')
-      .attr('text-anchor', isMobile ? 'start' : 'end')
+      .attr('text-anchor', 'end')
       .attr('fill', 'var(--text-primary)')
       .attr('font-family', "'Inter Variable', system-ui, sans-serif")
       .attr('font-weight', '500')
       .attr('font-size', labelFontSize)
-      .attr('x', isMobile ? 8 : margin.left - 8)
+      .attr('opacity', 0)
+      .attr('x', margin.left - 8)
       .attr('y', (_, i) => y(i)! + y.bandwidth() / 2 + 4)
       .text(d => `${codeToFlag(d.code)} ${isMobile ? d.code : d.name}`)
       .merge(labels)
       .transition()
       .duration(TRANSITION_MS)
       .ease(d3.easeLinear)
-      .attr('text-anchor', isMobile ? 'start' : 'end')
-      .attr('x', isMobile ? 8 : margin.left - 8)
+      .attr('opacity', 1)
+      .attr('x', margin.left - 8)
       .attr('y', (_, i) => y(i)! + y.bandwidth() / 2 + 4)
       .attr('font-size', labelFontSize)
       .text(d => `${codeToFlag(d.code)} ${isMobile ? d.code : d.name}`)
 
-    labels.exit().remove()
+    labels.exit()
+      .transition()
+      .duration(TRANSITION_MS / 3)
+      .attr('opacity', 0)
+      .remove()
 
     // Value labels (right of bars)
     const values = g.selectAll<SVGTextElement, typeof topData[number]>('text.value')
@@ -209,6 +221,7 @@ export default function BarChartRace({ data, years }: Props) {
       .attr('font-weight', '600')
       .attr('font-size', isMobile ? '11px' : '12px')
       .attr('font-variant-numeric', 'tabular-nums')
+      .attr('opacity', 0)
       .attr('x', d => margin.left + x(d.cleanShare) + 6)
       .attr('y', (_, i) => y(i)! + y.bandwidth() / 2 + 4)
       .text(d => `${d.cleanShare.toFixed(1)}%`)
@@ -216,11 +229,16 @@ export default function BarChartRace({ data, years }: Props) {
       .transition()
       .duration(TRANSITION_MS)
       .ease(d3.easeLinear)
+      .attr('opacity', 1)
       .attr('x', d => margin.left + x(d.cleanShare) + 6)
       .attr('y', (_, i) => y(i)! + y.bandwidth() / 2 + 4)
       .text(d => `${d.cleanShare.toFixed(1)}%`)
 
-    values.exit().remove()
+    values.exit()
+      .transition()
+      .duration(TRANSITION_MS / 3)
+      .attr('opacity', 0)
+      .remove()
   }, [currentYear, years, getTopN, isMobile])
 
   // Animation runs entirely through refs — no useEffect timer, no stale closures
