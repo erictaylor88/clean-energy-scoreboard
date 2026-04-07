@@ -131,6 +131,17 @@ function getCountryFlag(code: string): string {
     NPL: 'NP', JOR: 'JO', KWT: 'KW', QAT: 'QA', BHR: 'BH', OMN: 'OM',
     MAR: 'MA', TUN: 'TN', DZA: 'DZ', ETH: 'ET', TZA: 'TZ', GHA: 'GH',
     AGO: 'AO', MOZ: 'MZ', ZMB: 'ZM', ZWE: 'ZW', SEN: 'SN', CMR: 'CM',
+    JAM: 'JM', SPM: 'PM', SUR: 'SR', ABW: 'AW', CUB: 'CU', HTI: 'HT',
+    TTO: 'TT', PAN: 'PA', GTM: 'GT', HND: 'HN', SLV: 'SV', NIC: 'NI',
+    DOM: 'DO', BLZ: 'BZ', GUY: 'GY', VEN: 'VE', MMR: 'MM', LAO: 'LA',
+    KHM: 'KH', BRN: 'BN', UZB: 'UZ', TKM: 'TM', KGZ: 'KG', TJK: 'TJ',
+    SDN: 'SD', SSD: 'SS', COD: 'CD', COG: 'CG', GAB: 'GA', MLI: 'ML',
+    BFA: 'BF', NER: 'NE', TCD: 'TD', BWA: 'BW', NAM: 'NA', MWI: 'MW',
+    MDG: 'MG', UGA: 'UG', RWA: 'RW', LBY: 'LY', SOM: 'SO', FJI: 'FJ',
+    CIV: 'CI', SLE: 'SL', LBR: 'LR', TGO: 'TG', BEN: 'BJ', GIN: 'GN',
+    CUW: 'CW', SXM: 'SX', GRL: 'GL', FRO: 'FO', NCL: 'NC', PYF: 'PF',
+    MAC: 'MO', HKG: 'HK', FLK: 'FK', GIB: 'GI', BMU: 'BM', CYM: 'KY',
+    VGB: 'VG', TLS: 'TL', AFG: 'AF',
   }
   const a2 = alpha3to2[code] || code.slice(0, 2)
   return a2.toUpperCase().split('').map(c => String.fromCodePoint(0x1F1E6 + c.charCodeAt(0) - 65)).join('')
