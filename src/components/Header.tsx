@@ -40,63 +40,65 @@ export default function Header() {
   }, [menuOpen])
 
   return (
-    <header className="sticky top-0 z-50 border-b border-border-default bg-[rgba(8,15,12,0.8)] backdrop-blur-[12px]">
-      <div className="max-w-[1200px] mx-auto px-4 md:px-10 h-12 flex items-center justify-between">
-        {/* Logo */}
-        <Link
-          href="/"
-          onClick={(e) => {
-            if (pathname === '/') {
-              e.preventDefault()
-              window.scrollTo({ top: 0, behavior: 'smooth' })
-            }
-          }}
-          className="font-display font-bold text-text-primary text-sm tracking-tight hover:text-accent-green transition-colors duration-150"
-        >
-          Clean Energy Scoreboard
-        </Link>
+    <>
+      <header className="sticky top-0 z-50 border-b border-border-default bg-[rgba(8,15,12,0.8)] backdrop-blur-[12px]">
+        <div className="max-w-[1200px] mx-auto px-4 md:px-10 h-12 flex items-center justify-between">
+          {/* Logo */}
+          <Link
+            href="/"
+            onClick={(e) => {
+              if (pathname === '/') {
+                e.preventDefault()
+                window.scrollTo({ top: 0, behavior: 'smooth' })
+              }
+            }}
+            className="font-display font-bold text-text-primary text-sm tracking-tight hover:text-accent-green transition-colors duration-150"
+          >
+            Clean Energy Scoreboard
+          </Link>
 
-        {/* Desktop nav */}
-        <nav className="hidden md:flex items-center gap-6 text-sm font-body text-text-secondary">
-          {navLinks.map((link) => (
-            <Link
-              key={link.href}
-              href={link.href}
-              className={`hover:text-text-primary transition-colors duration-150 ${
-                pathname === link.href ? 'text-text-primary' : ''
+          {/* Desktop nav */}
+          <nav className="hidden md:flex items-center gap-6 text-sm font-body text-text-secondary">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className={`hover:text-text-primary transition-colors duration-150 ${
+                  pathname === link.href ? 'text-text-primary' : ''
+                }`}
+              >
+                {link.label}
+              </Link>
+            ))}
+          </nav>
+
+          {/* Hamburger button (mobile) */}
+          <button
+            className="md:hidden flex flex-col justify-center items-center w-10 h-10 -mr-2"
+            onClick={() => setMenuOpen(!menuOpen)}
+            aria-label={menuOpen ? 'Close menu' : 'Open menu'}
+            aria-expanded={menuOpen}
+          >
+            <span
+              className={`block w-5 h-[2px] bg-text-primary transition-all duration-200 ${
+                menuOpen ? 'translate-y-[3px] rotate-45' : ''
               }`}
-            >
-              {link.label}
-            </Link>
-          ))}
-        </nav>
+            />
+            <span
+              className={`block w-5 h-[2px] bg-text-primary mt-[4px] transition-all duration-200 ${
+                menuOpen ? '-translate-y-[3px] -rotate-45' : ''
+              }`}
+            />
+          </button>
+        </div>
+      </header>
 
-        {/* Hamburger button (mobile) */}
-        <button
-          className="md:hidden flex flex-col justify-center items-center w-10 h-10 -mr-2"
-          onClick={() => setMenuOpen(!menuOpen)}
-          aria-label={menuOpen ? 'Close menu' : 'Open menu'}
-          aria-expanded={menuOpen}
-        >
-          <span
-            className={`block w-5 h-[2px] bg-text-primary transition-all duration-200 ${
-              menuOpen ? 'translate-y-[3px] rotate-45' : ''
-            }`}
-          />
-          <span
-            className={`block w-5 h-[2px] bg-text-primary mt-[4px] transition-all duration-200 ${
-              menuOpen ? '-translate-y-[3px] -rotate-45' : ''
-            }`}
-          />
-        </button>
-      </div>
-
-      {/* Mobile menu overlay */}
+      {/* Mobile menu overlay — OUTSIDE header so backdrop-filter sees page content */}
       {menuOpen && (
         <div
           className="md:hidden fixed inset-0 top-12 z-40"
           style={{
-            backgroundColor: 'rgba(8, 15, 12, 0.7)',
+            backgroundColor: 'rgba(8, 15, 12, 0.6)',
             backdropFilter: 'blur(20px)',
             WebkitBackdropFilter: 'blur(20px)',
           }}
@@ -123,6 +125,6 @@ export default function Header() {
           </nav>
         </div>
       )}
-    </header>
+    </>
   )
 }
