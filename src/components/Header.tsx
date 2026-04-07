@@ -45,6 +45,12 @@ export default function Header() {
         {/* Logo */}
         <Link
           href="/"
+          onClick={(e) => {
+            if (pathname === '/') {
+              e.preventDefault()
+              window.scrollTo({ top: 0, behavior: 'smooth' })
+            }
+          }}
           className="font-display font-bold text-text-primary text-sm tracking-tight hover:text-accent-green transition-colors duration-150"
         >
           Clean Energy Scoreboard
@@ -88,7 +94,7 @@ export default function Header() {
       {/* Mobile menu overlay */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 top-12 z-40 bg-[rgba(8,15,12,0.95)] backdrop-blur-md"
+          className="md:hidden fixed inset-0 top-12 z-40 bg-[rgba(8,15,12,0.85)] backdrop-blur-xl"
           onClick={() => setMenuOpen(false)}
         >
           <nav
