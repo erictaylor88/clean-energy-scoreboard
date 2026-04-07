@@ -94,7 +94,12 @@ export default function Header() {
       {/* Mobile menu overlay */}
       {menuOpen && (
         <div
-          className="md:hidden fixed inset-0 top-12 z-40 bg-[rgba(8,15,12,0.85)] backdrop-blur-xl"
+          className="md:hidden fixed inset-0 top-12 z-40"
+          style={{
+            backgroundColor: 'rgba(8, 15, 12, 0.7)',
+            backdropFilter: 'blur(20px)',
+            WebkitBackdropFilter: 'blur(20px)',
+          }}
           onClick={() => setMenuOpen(false)}
         >
           <nav
