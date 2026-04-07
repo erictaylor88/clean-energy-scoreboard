@@ -4,6 +4,7 @@ import { getCountryBySlug, getCountryLatestData, getHistoricalTrend, getAllCount
 import type { Metadata } from 'next'
 
 import TrendChart from '@/components/TrendChartWrapper'
+import { CountryPageJsonLd } from '@/components/JsonLd'
 
 export const revalidate = 86400
 
@@ -32,6 +33,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: 'summary_large_image',
       images: [`/api/og?type=country&slug=${slug}`],
+    },
+    alternates: {
+      canonical: `https://iscleanenergywinning.com/country/${slug}`,
     },
   }
 }
@@ -77,6 +81,7 @@ export default async function CountryPage({ params }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <CountryPageJsonLd countryName={country.name} cleanShare={cleanShare} year={year} slug={slug} />
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-20">
         <span className="text-4xl mb-4">{flag}</span>
