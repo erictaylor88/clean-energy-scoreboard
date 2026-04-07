@@ -2,6 +2,7 @@ import { notFound } from 'next/navigation'
 import { getStateBySlug, getStateLatestData, getStateHistoricalTrend, getAllStateSlugs, getLastSyncTime } from '@/lib/supabase/queries'
 import type { Metadata } from 'next'
 import TrendChart from '@/components/TrendChartWrapper'
+import { StatePageJsonLd } from '@/components/JsonLd'
 
 export const revalidate = 86400
 
@@ -20,6 +21,9 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
     twitter: {
       card: 'summary_large_image',
       images: [`/api/og?type=state&slug=${slug}`],
+    },
+    alternates: {
+      canonical: `https://iscleanenergywinning.com/state/${slug}`,
     },
   }
 }
@@ -59,6 +63,7 @@ export default async function StatePage({ params }: Props) {
 
   return (
     <div className="flex flex-col min-h-screen">
+      <StatePageJsonLd stateName={state.name} cleanShare={cleanShare} year={year} slug={slug} />
       {/* Hero */}
       <section className="flex flex-col items-center justify-center text-center px-4 py-16 md:py-20">
         <span
