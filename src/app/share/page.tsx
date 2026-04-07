@@ -230,7 +230,7 @@ export default async function SharePage() {
       {/* Instructions */}
       <div className="pb-16 text-center">
         <p className="text-sm font-body" style={{ color: 'var(--text-muted)' }}>
-          Long-press or right-click any card to save the image. All data from{' '}
+          Screenshot any card to share it on social media. All data from{' '}
           <a href="https://ember-climate.org" target="_blank" rel="noopener noreferrer" className="text-accent-blue hover:underline">
             Ember
           </a>{' '}
