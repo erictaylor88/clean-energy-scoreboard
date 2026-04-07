@@ -10,12 +10,18 @@ const navLinks = [
   { href: '/#trends', label: 'Trends' },
   { href: '/race', label: 'Race' },
   { href: '/share', label: 'Share' },
+  { href: '/embed', label: 'Embed' },
   { href: '/about', label: 'About' },
 ]
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false)
   const pathname = usePathname()
+
+  // Hide header entirely on embed routes
+  if (pathname.startsWith('/embed/score') || pathname.startsWith('/embed/leaderboard') || pathname.startsWith('/embed/country/')) {
+    return null
+  }
 
   // Close menu on route change
   useEffect(() => {
